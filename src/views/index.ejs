@@ -1,0 +1,269 @@
+<!-- views/index.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Grid</title>
+    <style>
+
+        canvas {
+            border: 1px solid black;
+            background-color: darkblue;
+        }
+
+        body {
+            background-color: black;
+            margin: 0;
+            padding: 0;
+            /*height: 100vh;*/
+            /*display: flex;*/
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        .toolbar {
+            width: 14%;
+            height: 90%;
+            background-color: #add8e6; /* Pale blue background */
+            border: 5px solid black; /* Thick black border */
+            padding: 10px;
+            box-sizing: border-box;
+            position: fixed;
+            bottom: 10px;
+            right: 3%;
+            /*display: flex;*/
+            justify-content: space-between; /* Adjusted to space-between */
+        }
+
+        .stats {
+            /*display: flex;*/
+            gap: 20px;
+        }
+
+        .stat {
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+<!--<canvas id="hexCanvas" width="1380" height="1600"></canvas>-->
+<canvas id="hexCanvas" width="<%=gridWidth*46%>>" height="<%=gridHeight*53%>"></canvas>
+
+<script>
+  const canvas = document.getElementById('hexCanvas');
+  const ctx = canvas.getContext('2d');
+  const hexSize = 30;
+  const hexHeight = Math.sqrt(3) * hexSize;
+  const hexWidth = 2 * hexSize;
+  const hexVertDist = hexHeight * 0.5; // Adjust vertical distance
+  const hexHorizDist = hexWidth * 1.5; // Adjust horizontal distance
+
+  // const gridWidth = 30;
+  // const gridHeight = 30;
+  const gridWidth = <%= gridWidth %>;
+  const gridHeight = <%= gridHeight %>;
+  let players;
+  let units;
+  let gridOwners;
+
+
+  // Draw a single hexagon, based on position.
+  function drawHexagon(ctx, col, row, size, fillColor, borderColor, text) {
+    const x = col * hexHorizDist / 2 + hexWidth / 2;
+    const y = row * hexVertDist * 2 + (col % 2) * hexVertDist + hexHeight / 2;
+
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      ctx.lineTo(x + size * Math.cos(i * Math.PI / 3), y + size * Math.sin(i * Math.PI / 3));
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.strokeStyle = borderColor;
+    ctx.stroke();
+
+    // if (col === 0 || row === 0) {
+    ctx.fillStyle = 'black';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+    // }
+  }
+
+  // Draw a single unit, based on position.
+  function drawUnit(ctx, col, row, size, fillColor, text) {
+    const x = col * hexHorizDist / 2 + hexWidth / 2;
+    const y = row * hexVertDist * 2 + (col % 2) * hexVertDist + hexHeight / 2;
+
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      ctx.lineTo(x + size * Math.cos(i * Math.PI / 3), y + size * Math.sin(i * Math.PI / 3));
+    }
+    ctx.closePath();
+    ctx.fillStyle = fillColor;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = 'black';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y);
+  }
+
+  // Draw full hex grids here.
+  function drawHexGrid() {
+    for (let row = 0; row < gridWidth; row++) {
+      for (let col = 0; col < gridHeight; col++) {
+        if (grid[col][row] === 1) {
+          fillColor = 'green';
+        } else {
+          fillColor = 'darkblue';
+        }
+
+        let borderColor = 'black';
+        if (gridOwners && gridOwners[col][row] != null && gridOwners[col][row] !== 0) {
+          const playerId = gridOwners[col][row];
+          const player = players.find(p => p.id === playerId); // this is probs slow. hash or somethings.
+          if (player) {
+            borderColor = player ? player.color : 'black';
+            // = getPlayerColor(playerId);
+            if (!player.mapCaptureCount) {
+              player.mapCaptureCount = 0;
+            }
+            player.mapCaptureCount++;
+          } else {
+            console.log("ERROR: player not found. playerId = ", playerId);
+          }
+        }
+
+        const text = `(${col}, ${row})`;
+        drawHexagon(ctx, col, row, hexSize, fillColor, borderColor, text);
+      }
+    }
+
+    // TODO do only land in reality.
+    // TODO calc player owner percents here....
+    // console.log("DEBUG: players = ", players);
+    players[0].mapCapturePercent = Math.round(players[0].mapCaptureCount / (gridWidth * gridHeight) * 100);
+    players[1].mapCapturePercent = Math.round(players[1].mapCaptureCount / (gridWidth * gridHeight) * 100);
+  }
+
+  function hexDistance(x1, y1, x2, y2) {
+    const xd = x1 - x2;
+    const yd = y1 - ((x1 - (x1 & 1)) / 2) - (y2 - (x2 - (x2 & 1)) / 2);
+    const dist = (Math.abs(xd) + Math.abs(xd + yd) + Math.abs(yd)) / 2;
+    return dist;
+  }
+
+  // On Click hex listener.
+  canvas.addEventListener('click', function (event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    const col = Math.floor(x / (hexWidth * 0.75));
+    const row = Math.floor((y - (col % 2) * hexVertDist) / hexHeight);
+
+    console.log(`Clicked hex: (${col}, ${row}) grid = ${grid[col][row]}`);
+
+    // Debug Test.
+    // Redraw the clicked hexagon with yellow fill color
+    drawHexagon(ctx, col, row, hexSize, 'yellow', `(${col}, ${row})`);
+    // grid[col][row] = 0; // set to water.
+  });
+
+
+  // Render map
+  const grid = <%- JSON.stringify(grid) %>;
+  // console.log("DEBUG grid = ", grid);
+  // drawHexGrid();
+
+
+  // Render units
+  units = <%- JSON.stringify(units) %>;
+  // units.forEach(unit => {
+  //   drawUnit(ctx, unit.x, unit.y, hexSize, unit.color, unit.type);
+  // });
+
+  // TODO need to save grid to file. and load.
+
+
+  async function fetchUpdates() {
+    const response = await fetch('/fetch-updates');
+    const updates = await response.json();
+    return updates;
+  }
+
+  function updateUnits(units) {
+    units.forEach(unit => {
+      drawUnit(ctx, unit.x, unit.y, hexSize, unit.color, unit.name);
+    });
+  }
+
+  function updateToolbar() {
+    let troopCnt = 0;
+    let totalTroops = 0;
+    // Init an array for all players
+    let troopTotals = [];
+    units.forEach(unit => {
+      totalTroops++;
+      if (unit.playerId === players[0].id) {
+        troopCnt++;
+      }
+      if (!troopTotals[unit.playerId]) { // init if not used.
+        troopTotals[unit.playerId] = 0;
+      }
+      troopTotals[unit.playerId]++;
+    });
+    console.log("DEBUG: troopTotals = ", troopTotals);
+    let enemyTroops = totalTroops - troopCnt;
+    document.querySelector('.player-info').textContent = players[0].name;
+    document.querySelector('#stat-troops').textContent = `Troops: ${troopCnt}`;
+    document.querySelector('#stat-enemy-troops').textContent = `Enemy Troops: ${enemyTroops}`;
+    document.querySelector('#stat-map-captured').textContent = `Map Captured: ${players[0].mapCapturePercent}%`;
+    const gold = 26; // TEMP.
+    document.querySelector('#stat-gold').textContent = `Gold: ${gold}`;
+    // Other armies here:
+    // Loop over players and display their stats.
+    let troopTotalsText = '';
+    for (let player of players) {
+      if (player.id !== players[0].id) {
+        troopTotalsText += `Player ${player.id} Troops: ${troopTotals[player.id]} <br>`;
+      }
+    }
+    document.querySelector('#other-troops').innerHTML = troopTotalsText;
+  }
+
+  const gameSpeed = 3; // seconds
+  setInterval(async () => {
+    const updates = await fetchUpdates();
+    units = updates.units;
+    players = updates.players;
+    gridOwners = updates.gridOwners;
+
+    // ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    ctx.clearRect(0, 0, gridWidth*27, gridHeight*30); // Clear the canvas
+    drawHexGrid(); // Redraw the hex grid
+    updateUnits(updates.units);
+    updateToolbar();
+    // console.log("Updating units. ")
+  }, 400 * gameSpeed);
+</script>
+
+<div class="toolbar">
+    <!-- Toolbar content goes here -->
+    <div class="player-info">Player 1<br></div>
+    <div class="stats">
+        <div class="stat" id="stat-troops">Troops: 10<br></div>
+        <div class="stat" id="stat-enemy-troops">Enemy Troops: 8<br></div>
+        <div class="stat" id="stat-map-captured">Map Captured: 50%<br></div>
+        <div class="stat" id="stat-gold">Gold: 100<br></div>
+        <div class="stat" id="other-troops">Player 2 Troops: 5<br>Player 3 Troops: 3<br>Player 4 Troops: 2<br></div>
+    </div>
+</div>
+
+</body>
+</html>
