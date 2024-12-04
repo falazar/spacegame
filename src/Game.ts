@@ -7,8 +7,6 @@ export class Game {
   private players: Player[];
   private units: Unit[];
   private seed: number;
-  // gridWidth = 30;
-  // gridHeight = 30;
   gridWidth = 80;
   gridHeight = 80;
   grid = new Array(this.gridHeight).fill(1).map(() => new Array(this.gridWidth).fill(1));
@@ -95,28 +93,28 @@ export class Game {
       return false;
     }
 
-    // Check if another unit is there.
-    for (const otherUnit of this.units) {
-      if (otherUnit.x === x && otherUnit.y === y && otherUnit.id !== unit.id) {
-        // console.log(`  Unit ${unit.id} tried to walk on unit ${otherUnit.id}`);
-        return false;
-      }
-    }
+    // // Check if another unit is there.
+    // for (const otherUnit of this.units) {
+    //   if (otherUnit.x === x && otherUnit.y === y && otherUnit.id !== unit.id) {
+    //     // console.log(`  Unit ${unit.id} tried to walk on unit ${otherUnit.id}`);
+    //     return false;
+    //   }
+    // }
 
     return true;
   }
 
-  // Is the square able to be walked on?
+  // Is the square able to be moved on?
   isWalkableTerrain(x: number, y: number, unit: Unit) {
     if (!this.inBounds(x, y)) {
       return false;
     }
 
-    const type = this.grid[x][y];
-    // For now no one can walk on water.
-    if (type === 0) {
-      return false;
-    }
+    // const type = this.grid[x][y];
+    // // For now no one can walk on water.
+    // if (type === 0) {
+    //   return false;
+    // }
 
     return true;
   }
@@ -225,26 +223,26 @@ export class Game {
         // TODO modifiers after awhile bought.
         // Command which troop to buy.
 
-        // Lower is better troops.
-        if (r >= 0.45) { // 55%
-          const newUnit = new Unit(unit.playerId, 'guard', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        } else if (r >= 0.25) { // 20%
-          const newUnit = new Unit(unit.playerId, 'explorer', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        } else if (r >= 0.17) { // 8%
-          const newUnit = new Unit(unit.playerId, 'soldier', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        } else if (r >= 0.10) { // 7%
-          const newUnit = new Unit(unit.playerId, 'builder', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        } else if (r >= 0.05) { // 5%
-          const newUnit = new Unit(unit.playerId, 'captain', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        } else {  // 5%
-          const newUnit = new Unit(unit.playerId, 'trainer', unit.x, unit.y, unit.color);
-          this.addUnit(newUnit);
-        }
+        // // Lower is better troops.
+        // if (r >= 0.45) { // 55%
+        //   const newUnit = new Unit(unit.playerId, 'guard', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // } else if (r >= 0.25) { // 20%
+        //   const newUnit = new Unit(unit.playerId, 'explorer', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // } else if (r >= 0.17) { // 8%
+        //   const newUnit = new Unit(unit.playerId, 'soldier', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // } else if (r >= 0.10) { // 7%
+        //   const newUnit = new Unit(unit.playerId, 'builder', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // } else if (r >= 0.05) { // 5%
+        //   const newUnit = new Unit(unit.playerId, 'captain', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // } else {  // 5%
+        //   const newUnit = new Unit(unit.playerId, 'trainer', unit.x, unit.y, unit.color);
+        //   this.addUnit(newUnit);
+        // }
         return; // no movement if unit created.
       }
     }
@@ -355,8 +353,8 @@ export class Game {
           moved = true;
         } // else will move randomly later.
       }
-    } else if (unit.type === 'explorer') {
-
+    }
+    else if (unit.type === 'explorer' || unit.type === 'ship1') {
       if (unit.moveDir === null) {
         unit.moveDir = Math.floor(Math.random() * 6);
       }
@@ -677,14 +675,13 @@ export class Game {
 
   start() {
     console.log('Starting game...');
-    this.createNewMap();
+    // this.createNewMap();
 
     this.addInitialGameData();
   }
 
   addInitialGameData() {
-
-    // Add start players.
+    // Add test players.
     const player1 = new Player(1, 'Falazar', 'blue');
     this.addPlayer(player1);
     const player2 = new Player(2, 'Mobby', 'red');
@@ -692,40 +689,12 @@ export class Game {
     const player3 = new Player(3, 'Crag', 'yellow');
     this.addPlayer(player3);
 
-    // Add initial units for each player.
-    // TODO make sure they randomly go on a land in their area.
+    // Add some test ships.
     let unit;
-    unit = new Unit(player1.id, 'trainer', 10, 10, player1.color);
+    unit = new Unit(player1.id, "Falazar", 'ship1', 10, 10, player1.color);
     this.addUnit(unit);
-    unit = new Unit(player1.id, 'guard', 11, 10, player1.color);
-    this.addUnit(unit);
-    unit = new Unit(player1.id, 'guard', 12, 10, player1.color);
-    this.addUnit(unit);
-    unit = new Unit(player1.id, 'explorer', 13, 10, player1.color);
-    this.addUnit(unit);
-    unit = new Unit(player1.id, 'builder', 14, 10, player1.color);
+    unit = new Unit(player1.id, "Falazar", 'ship1', 12, 10, player1.color);
     this.addUnit(unit);
 
-    unit = new Unit(player2.id, 'trainer', 3, 15, player2.color);
-    this.addUnit(unit);
-    unit = new Unit(player2.id, 'guard', 4, 15, player2.color);
-    this.addUnit(unit);
-    unit = new Unit(player2.id, 'guard', 5, 15, player2.color);
-    this.addUnit(unit);
-    unit = new Unit(player2.id, 'explorer', 6, 15, player2.color);
-    this.addUnit(unit);
-    unit = new Unit(player2.id, 'builder', 7, 15, player2.color);
-    this.addUnit(unit);
-
-    unit = new Unit(player3.id, 'trainer', 22, 8, player3.color);
-    this.addUnit(unit);
-    unit = new Unit(player3.id, 'guard', 23, 8, player3.color);
-    this.addUnit(unit);
-    unit = new Unit(player3.id, 'guard', 24, 8, player3.color);
-    this.addUnit(unit);
-    unit = new Unit(player3.id, 'explorer', 25, 8, player3.color);
-    this.addUnit(unit);
-    unit = new Unit(player3.id, 'builder', 26, 8, player3.color);
-    this.addUnit(unit);
   }
 }

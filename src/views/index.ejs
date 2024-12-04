@@ -4,22 +4,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hex Grid</title>
+    <title>Space Game </title>
     <style>
 
-        canvas {
-            border: 1px solid black;
-            background-color: darkblue;
-        }
-
+        /* Layer 1 bottom */
         body {
             background-color: black;
             margin: 0;
             padding: 0;
-            /*height: 100vh;*/
-            /*display: flex;*/
+
+            /* Lowest background layer */
+            background-image: url('/images/background_starfields/stars_background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+
             flex-direction: column;
             justify-content: flex-end;
+
+            overflow: hidden;
+        }
+
+        /* Layer 2 middle */
+        .pinprick-stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background-image: url('/images/background_starfields/star_field1.png');
+            background-repeat: repeat;
+            /*background-size: contain;*/
+            z-index: 20;
+        }
+
+        /* Layer 3 top */
+        .asteroid-field {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 200%;
+            height: 200%;
+            background-image: url('/images/asteroid_fields/asteroid_field1.png');
+            background-repeat: repeat;
+            background-size: 15%; /* Adjust this value to shrink the base image */
+            z-index: 50;
+        }
+
+        /* Ship planets and main layer. */
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            /*width: 100%;*/
+            /*height: 100%;*/
+            /* may have to hardocde size here?*/
+            border: 1px solid black;
+            z-index: 70;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            cursor: move;
+            z-index: 100;
         }
 
         .toolbar {
@@ -34,6 +86,7 @@
             right: 3%;
             /*display: flex;*/
             justify-content: space-between; /* Adjusted to space-between */
+            z-index: 120; /* Ensure it is above other elements */
         }
 
         .stats {
@@ -47,17 +100,30 @@
     </style>
 </head>
 <body>
-<!--<canvas id="hexCanvas" width="1380" height="1600"></canvas>-->
-<canvas id="hexCanvas" width="<%=gridWidth*46%>>" height="<%=gridHeight*53%>"></canvas>
+
+<!--<img id="pinprick_stars" src="/images/background_starfields/star_field1.png"-->
+<!--     style="position: absolute; top: 0px; left: 0px; width:50%">-->
+<div class="pinprick-stars" id="pinprick_stars"></div>
+
+<!--<img id="asteroid_starfield" src="/images/asteroid_fields/asteroid_field1.png" alt="Asteroid Field"-->
+<!--     style="position: absolute; top: 0px; left: 0px; width:50%">-->
+
+<div class="asteroid-field" id="asteroidfield"></div>
+
+<canvas class="canvas" id="gridCanvas" width="3200" height="1800"></canvas>
+
+<div class="overlay" id="overlay"></div>
 
 <script>
-  const canvas = document.getElementById('hexCanvas');
+  const canvas = document.getElementById('gridCanvas');
+  const overlay = document.getElementById('overlay');
+
   const ctx = canvas.getContext('2d');
-  const hexSize = 30;
-  const hexHeight = Math.sqrt(3) * hexSize;
-  const hexWidth = 2 * hexSize;
-  const hexVertDist = hexHeight * 0.5; // Adjust vertical distance
-  const hexHorizDist = hexWidth * 1.5; // Adjust horizontal distance
+  const cellSize = 50;
+  const cellHeight = cellSize;
+  const cellWidth = cellSize;
+  // const hexVertDist = cellHeight * 0.5; // Adjust vertical distance
+  // const hexHorizDist = cellWidth * 1.5; // Adjust horizontal distance
 
   // const gridWidth = 30;
   // const gridHeight = 30;
@@ -68,117 +134,96 @@
   let gridOwners;
 
 
-  // Draw a single hexagon, based on position.
-  function drawHexagon(ctx, col, row, size, fillColor, borderColor, text) {
-    const x = col * hexHorizDist / 2 + hexWidth / 2;
-    const y = row * hexVertDist * 2 + (col % 2) * hexVertDist + hexHeight / 2;
-
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      ctx.lineTo(x + size * Math.cos(i * Math.PI / 3), y + size * Math.sin(i * Math.PI / 3));
-    }
-    ctx.closePath();
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.strokeStyle = borderColor;
-    ctx.stroke();
-
-    // if (col === 0 || row === 0) {
-    ctx.fillStyle = 'black';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, y);
-    // }
-  }
-
   // Draw a single unit, based on position.
-  function drawUnit(ctx, col, row, size, fillColor, text) {
-    const x = col * hexHorizDist / 2 + hexWidth / 2;
-    const y = row * hexVertDist * 2 + (col % 2) * hexVertDist + hexHeight / 2;
+  function drawUnit(ctx, type, col, row, size, fillColor, text) {
+    // console.log("DEBUG1: drawing unit now at ", col, row, text);
 
-    ctx.beginPath();
-    for (let i = 0; i < 6; i++) {
-      ctx.lineTo(x + size * Math.cos(i * Math.PI / 3), y + size * Math.sin(i * Math.PI / 3));
-    }
-    ctx.closePath();
-    ctx.fillStyle = fillColor;
-    ctx.fill();
-    ctx.stroke();
+    const x = col * cellSize;
+    const y = row * cellSize;
+    // console.log("DEBUG2: Unit x y now at ", x, y, text+ " size = ", size);
 
-    ctx.fillStyle = 'black';
+    // Add in our ship graphic now.
+    // todo make multiple ship types usable.
+    const img = new Image();
+    // img.src = '/images/ships/ship1.png';
+    img.src = '/images/ships/'+type+'.png';
+    img.onload = function () {
+      ctx.drawImage(img, x-cellSize/2, y-cellSize/2, 128, 128);
+    };
+
+    ctx.fillStyle = 'white';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, x, y);
+    ctx.fillText(text, x+cellSize/2, y);
   }
 
-  // Draw full hex grids here.
-  function drawHexGrid() {
-    for (let row = 0; row < gridWidth; row++) {
-      for (let col = 0; col < gridHeight; col++) {
-        if (grid[col][row] === 1) {
-          fillColor = 'green';
-        } else {
-          fillColor = 'darkblue';
-        }
+  // Draws our graph paper lines now.
+  function drawGrid(ctx, cellSize) {
+    const width = canvas.width;
+    const height = canvas.height;
 
-        let borderColor = 'black';
-        if (gridOwners && gridOwners[col][row] != null && gridOwners[col][row] !== 0) {
-          const playerId = gridOwners[col][row];
-          const player = players.find(p => p.id === playerId); // this is probs slow. hash or somethings.
-          if (player) {
-            borderColor = player ? player.color : 'black';
-            // = getPlayerColor(playerId);
-            if (!player.mapCaptureCount) {
-              player.mapCaptureCount = 0;
-            }
-            player.mapCaptureCount++;
-          } else {
-            console.log("ERROR: player not found. playerId = ", playerId);
-          }
-        }
+    ctx.strokeStyle = 'gray'; // Color of the grid lines
+    ctx.lineWidth = 1; // Width of the grid lines
+    ctx.font = '12px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
 
-        const text = `(${col}, ${row})`;
-        drawHexagon(ctx, col, row, hexSize, fillColor, borderColor, text);
+    // Draw vertical lines and numbers
+    for (let x = 0; x <= width; x += cellSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+
+      for (let y = 0; y <= height; y += cellSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+
+        // Draw the cell number
+        const col = x / cellSize;
+        const row = y / cellSize;
+        ctx.fillText(`${col},${row}`, x + cellSize / 2, y + cellSize / 2);
       }
     }
-
-    // TODO do only land in reality.
-    // TODO calc player owner percents here....
-    // console.log("DEBUG: players = ", players);
-    players[0].mapCapturePercent = Math.round(players[0].mapCaptureCount / (gridWidth * gridHeight) * 100);
-    players[1].mapCapturePercent = Math.round(players[1].mapCaptureCount / (gridWidth * gridHeight) * 100);
   }
 
-  function hexDistance(x1, y1, x2, y2) {
-    const xd = x1 - x2;
-    const yd = y1 - ((x1 - (x1 & 1)) / 2) - (y2 - (x2 - (x2 & 1)) / 2);
-    const dist = (Math.abs(xd) + Math.abs(xd + yd) + Math.abs(yd)) / 2;
-    return dist;
-  }
 
-  // On Click hex listener.
-  canvas.addEventListener('click', function (event) {
+  // function hexDistance(x1, y1, x2, y2) {
+  //   const xd = x1 - x2;
+  //   const yd = y1 - ((x1 - (x1 & 1)) / 2) - (y2 - (x2 - (x2 & 1)) / 2);
+  //   const dist = (Math.abs(xd) + Math.abs(xd + yd) + Math.abs(yd)) / 2;
+  //   return dist;
+  // }
+
+  // On Click grid listener.
+  overlay.addEventListener('click', function (event) {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    const col = Math.floor(x / (hexWidth * 0.75));
-    const row = Math.floor((y - (col % 2) * hexVertDist) / hexHeight);
+    // TODO offset for however much we shifted
 
-    console.log(`Clicked hex: (${col}, ${row}) grid = ${grid[col][row]}`);
+    const col = Math.floor(x / cellSize);
+    const row = Math.floor(y / cellSize);
 
+    console.log(`Clicked map: (${col}, ${row}) `);
+
+    // Select or deselect a ship if clicked on.
+
+    // Note it may click close to the ship not exactly on it.
     // Debug Test.
     // Redraw the clicked hexagon with yellow fill color
-    drawHexagon(ctx, col, row, hexSize, 'yellow', `(${col}, ${row})`);
+    // drawHexagon(ctx, col, row, cellSize, 'yellow', `(${col}, ${row})`);
     // grid[col][row] = 0; // set to water.
   });
 
 
   // Render map
-  const grid = <%- JSON.stringify(grid) %>;
-  // console.log("DEBUG grid = ", grid);
+  // TODO DO ME
   // drawHexGrid();
 
 
@@ -194,12 +239,14 @@
   async function fetchUpdates() {
     const response = await fetch('/fetch-updates');
     const updates = await response.json();
+    // console.log("DEBUG: updates = ", updates);
+
     return updates;
   }
 
   function updateUnits(units) {
     units.forEach(unit => {
-      drawUnit(ctx, unit.x, unit.y, hexSize, unit.color, unit.name);
+      drawUnit(ctx, unit.type, unit.x, unit.y, cellSize, unit.color, unit.playerName);
     });
   }
 
@@ -237,25 +284,93 @@
     document.querySelector('#other-troops').innerHTML = troopTotalsText;
   }
 
+  // START OVERLAY DRAG CODE.
+  let isDragging = false;
+  let startX, startY;
+
+  overlay.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  // Allow dragging of full map here.
+  overlay.addEventListener('mousemove', (e) => {
+    if (!isDragging) {
+      return;
+    }
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    // console.log(`Dragging: dx = ${dx}, dy = ${dy}`);
+    // Perform your movement logic here
+    startX = e.clientX;
+    startY = e.clientY;
+
+    // Slide around asteroid layer.
+    const asteroidField = document.getElementById('asteroidfield');
+    if (!asteroidField) {
+      console.log("ERROR: asteroidField not found.");
+      // return;
+    }
+    let rect = asteroidField.getBoundingClientRect();
+    let currentX = rect.left + window.scrollX;
+    let currentY = rect.top + window.scrollY;
+    asteroidField.style.transform = `translate(${currentX + dx * 0.3}px, ${currentY + dy * 0.3}px)`;
+
+
+    // Slide around ship layer a lot.
+    const gridCanvas = document.getElementById('gridCanvas');
+    if (!gridCanvas) {
+      console.log("ERROR: gridCanvas not found.");
+      // return;
+    }
+    rect = gridCanvas.getBoundingClientRect();
+    currentX = rect.left + window.scrollX;
+    currentY = rect.top + window.scrollY;
+    gridCanvas.style.transform = `translate(${currentX + dx * 1}px, ${currentY + dy * 1}px)`;
+
+    // Slide around pinpricks layer less.
+    const pinprick_stars = document.getElementById('pinprick_stars');
+    if (!pinprick_stars) {
+      console.log("ERROR: pinprick_stars not found.");
+      // return;
+    }
+    rect = pinprick_stars.getBoundingClientRect();
+    currentX = rect.left + window.scrollX;
+    currentY = rect.top + window.scrollY;
+    pinprick_stars.style.transform = `translate(${currentX + dx * 0.03}px, ${currentY + dy * 0.03}px)`;
+  });
+
+  overlay.addEventListener('mouseup', () => {
+    isDragging = false;
+  });
+
+  overlay.addEventListener('mouseleave', () => {
+    isDragging = false;
+  });
+  // END OVERLAY
+
   const gameSpeed = 3; // seconds
   setInterval(async () => {
     const updates = await fetchUpdates();
     units = updates.units;
     players = updates.players;
-    gridOwners = updates.gridOwners;
+    // gridOwners = updates.gridOwners;
 
-    // ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-    ctx.clearRect(0, 0, gridWidth*27, gridHeight*30); // Clear the canvas
-    drawHexGrid(); // Redraw the hex grid
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+
+    // Debug stuffs draw grid.
+    drawGrid(ctx, cellSize);
+
     updateUnits(updates.units);
-    updateToolbar();
-    // console.log("Updating units. ")
+    // updateToolbar();
+    // console.log("Updated units. ")
   }, 400 * gameSpeed);
 </script>
 
 <div class="toolbar">
     <!-- Toolbar content goes here -->
-    <div class="player-info">Player 1<br></div>
+    <div class="player-info">Player Name<br></div>
     <div class="stats">
         <div class="stat" id="stat-troops">Troops: 10<br></div>
         <div class="stat" id="stat-enemy-troops">Enemy Troops: 8<br></div>

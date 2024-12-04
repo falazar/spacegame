@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export class Unit {
   id: string;
   playerId: number;
+  playerName: string;
   type: string;
   name: string;
   x: number;
@@ -14,9 +15,10 @@ export class Unit {
   attack: number;
   moveDir: number | null;
 
-  constructor(playerId: number, type: string, x: number, y: number, color: string) {
+  constructor(playerId: number, playerName: string, type: string, x: number, y: number, color: string) {
     this.id = uuidv4();
     this.playerId = playerId;
+    this.playerName = playerName;
     this.type = type;
     this.name = type + this.id[0];
     this.x = x;

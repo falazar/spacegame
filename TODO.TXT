@@ -1,0 +1,41 @@
+
+TODO LIST:
+
+STAGE 1:
+    DONE - Add background starfield image.
+    DONE - Get generic background.
+    STAR SYSTEM:
+        Show star system.
+        Show star at center.
+        Show X planets.
+        Show planet orbits.
+        Show Star System Name
+    SHIPS:
+        DONE - Show a shuttle/unit.
+        Show it moving properly.
+        Drag to move.
+    INTERFACE:
+        Get click on grid working
+        Show Grid for debugging
+        Pinch or scroll to zoom in/out.
+
+STAGE 2:
+    Add DB mysql.
+    PLANETS:
+        Have planets actually orbit.
+        Have diff planet sizes.
+        Add some moons.
+        Name each planet with Taylor I etc heading away.
+    RESOURCES:
+        Add resource collection from asteroids, planets, moons?
+        Add resource types.
+    GRAPHICS:
+        Add fog of war.
+
+STAGE 3:
+    Add landing on planets.
+    Add fighting.
+    Add AI.
+    Generate new random maps.
+
+    Add asteroid belts.
