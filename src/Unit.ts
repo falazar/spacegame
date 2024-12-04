@@ -14,6 +14,9 @@ export class Unit {
   health: number;
   attack: number;
   moveDir: number | null;
+  gotoX: number | null;
+  gotoY: number | null;
+  // TODO Can I do this as a pair? coords?
 
   constructor(playerId: number, playerName: string, type: string, x: number, y: number, color: string) {
     this.id = uuidv4();
@@ -25,6 +28,9 @@ export class Unit {
     this.y = y;
     this.color = color;
     this.moveDir = null
+    this.gotoX = null;
+    this.gotoY = null;
+
     // Get health and attack and stats based on type.
     if (type === 'trainer') {
       this.health = 20;

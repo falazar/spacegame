@@ -7,8 +7,8 @@ export class Game {
   private players: Player[];
   private units: Unit[];
   private seed: number;
-  gridWidth = 80;
-  gridHeight = 80;
+  gridWidth = 63; // Number of grid squares.
+  gridHeight = 35;
   grid = new Array(this.gridHeight).fill(1).map(() => new Array(this.gridWidth).fill(1));
   gridOwners = new Array(this.gridHeight).fill(0).map(() => new Array(this.gridWidth).fill(0));
 
@@ -51,41 +51,6 @@ export class Game {
     return x - Math.floor(x);
   }
 
-  // Pick any random neighbor hex, 1.
-  getRandomNeighbor(x: number, y: number) {
-    // const dir = Math.floor(Math.random() * 6);
-    const dir = Math.floor(this.seededRandom() * 6);
-
-    const even = x % 2 === 0;
-    switch (dir) {
-      case 0:
-        x++;
-        if (!even) y++;
-        break;
-      case 1:
-        x++;
-        if (even) y--;
-        break;
-      case 2:
-        y--;
-        break;
-      case 3:
-        x--;
-        if (even) y--;
-        break;
-      case 4:
-        x--;
-        if (!even) y++;
-        break;
-      case 5:
-        y++;
-        break;
-    }
-    // console.log(`  DEBUG: Random neighbor dir = ${dir}, col = ${col}, row = ${row}`);
-
-    return { x, y };
-  }
-
   // Is the square able to be walked on?
   // later look for other units, etc.
   isWalkable(x: number, y: number, unit: Unit) {
@@ -120,69 +85,13 @@ export class Game {
   }
 
 
-  // TODO make percents instead!!!
-  addRandomWaters() {
-    // let waterSize = 30;
-    let waterSize = 200;
-    // todo make some edges water?
-
-    // Starting at center, put in some random waters.
-    while (waterSize > 0) {
-      const col = Math.floor(this.gridWidth / 2 + this.seededRandom() * this.gridWidth - this.gridWidth / 2);
-      const row = Math.floor(this.gridHeight / 2 + this.seededRandom() * this.gridHeight - this.gridHeight / 2);
-      // If in bounds set to water.
-      if (col >= 0 && col < this.gridWidth && row >= 0 && row < this.gridHeight) {
-        this.grid[col][row] = 0;
-        waterSize--;
-      }
-    }
-  }
-
-  // TODO make percents instead!!!
-  // Spread water around more on map to make barriers.
-  spreadWaters() {
-    // let waterSize = 190;
-    // let waterSize = 900;
-    let waterSize = 1200;
-
-    // Find a random spot of water, then go random dir and add more water.
-    console.log('Spreading water... ');
-    while (waterSize > 0) {
-      let counter = 0;
-      let col = 0;
-      let row = 0;
-      // TODO MAKE METHOD.
-      do {
-        col = Math.floor(this.gridWidth / 2 + this.seededRandom() * this.gridWidth - this.gridWidth / 2);
-        row = Math.floor(this.gridHeight / 2 + this.seededRandom() * this.gridHeight - this.gridHeight / 2);
-        counter++;
-      } while (this.grid[col][row] !== 0 && counter < 500);
-      // console.log(`Found water at (${col}, ${row})`);
-
-      // Go one random spot neighbor and add water.
-      const { x: x2, y: y2 } = this.getRandomNeighbor(col, row);
-      // console.log(`Random neighbor: (${x2}, ${y2})`);
-
-      // If in bounds set to water.
-      if (x2 >= 0 && x2 < this.gridWidth && y2 >= 0 && y2 < this.gridHeight) {
-        // console.log(`${waterSize}: Adding water from (${col}, ${row}) to (${x2}, ${y2})`);
-        this.grid[x2][y2] = 0;
-      } else {
-        // console.log('Out of bounds, skipping...');
-      }
-
-      waterSize--;
-    }
-  }
-
-
   // todo pull grid back to server.
   // todo move all this to maps.
   // Build up a random map.
   createNewMap() {
     console.log('Building random map...');
-    this.addRandomWaters();
-    this.spreadWaters();
+    // this.addRandomWaters();
+    // this.spreadWaters();
   }
 
 
@@ -191,14 +100,15 @@ export class Game {
     const second = new Date().getSeconds();
     // if (second % 10 === 0) {
     console.log(`--------------------------------------`);
-    console.log(`${second}s: Moving units now`);
+    console.log(`${second}s: Moving ships now`);
     // }
 
     // Clear out all dead units now.
     this.units = this.units.filter(u => u.health > 0);
 
     this.units.forEach((unit: Unit) => {
-        console.log(`  Unit P${unit.playerId}:${unit.name} at ${unit.x},${unit.y} H:${unit.health} is moving...`);
+        console.log(`  Unit P${unit.playerId}:${unit.name} at ${unit.x},${unit.y} Health:${unit.health}  goto:${unit.gotoX || 0},${unit.gotoY || 0}`);
+
         // TODO make all a method.
         if (unit.health <= 0) {
           console.log(`    Unit ${unit.name}:${unit.x},${unit.y} is dead, cant attack...`);
@@ -206,47 +116,12 @@ export class Game {
         }
 
         this.chooseUnitAction(unit);
-
       }
     );
   }
 
+  // TODO change names, hmmm. move only here?
   chooseUnitAction(unit: Unit) {
-    // Check special actions:
-    if (unit.type === 'trainer') {
-      // TODO Check gold first... and food?
-
-      // 5% chance to spawn a new unit.
-      if (Math.random() < 0.05) {
-        // todo make method.
-        const r = Math.random();
-        // TODO modifiers after awhile bought.
-        // Command which troop to buy.
-
-        // // Lower is better troops.
-        // if (r >= 0.45) { // 55%
-        //   const newUnit = new Unit(unit.playerId, 'guard', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // } else if (r >= 0.25) { // 20%
-        //   const newUnit = new Unit(unit.playerId, 'explorer', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // } else if (r >= 0.17) { // 8%
-        //   const newUnit = new Unit(unit.playerId, 'soldier', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // } else if (r >= 0.10) { // 7%
-        //   const newUnit = new Unit(unit.playerId, 'builder', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // } else if (r >= 0.05) { // 5%
-        //   const newUnit = new Unit(unit.playerId, 'captain', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // } else {  // 5%
-        //   const newUnit = new Unit(unit.playerId, 'trainer', unit.x, unit.y, unit.color);
-        //   this.addUnit(newUnit);
-        // }
-        return; // no movement if unit created.
-      }
-    }
-
     // Unit new coords.
     let x: number = unit.x;
     let y: number = unit.y;
@@ -256,164 +131,129 @@ export class Game {
     // todo add attack ranged.
 
 
-    // Builder can build walls and farms and things.
-    if (unit.type === 'builder') {
-      // Check if any enemy units are in range.
-      const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
-
-      if (enemyUnitInRange != null && closestDistance < 10) {
-        const enemyUnit = enemyUnitInRange as Unit;
-        console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
-
-        // Move towards enemy unit.
-        ({ x, y } = this.moveAwayFromSpot(unit, enemyUnit.x, enemyUnit.y));
-        // TODO move away from enemy.
-
-        // TODO if blocked by land move randomly. todo
-        moved = true;
-      } else {
-
-        console.log(`    Unit P${unit.playerId}:${unit.name} is looking for water...`);
-        // TODO check if touching water, build farm now.
-        if (this.isNextToWater(unit.x, unit.y)) {
-          console.log("I WANT TO BUILD A FARM HERE!");
-          moved = true;
-          // TODO
-        } else {
-          // If no enemy in range, they need to find the nearest water area to make a farm,
-          // if we dont need food then do something else.
-          const waterPos: { x: number, y: number } | null = this.findNearestWater(unit);
-          if (waterPos !== null) {
-            const { x: toX, y: toY } = waterPos;  // destructure
-            console.log(`    Unit found water at ${toX}, ${toY}`);
-            // Move towards water hex.
-            ({ x, y } = this.moveTowardSpot(unit, toX, toY));
-            // ({ x, y } = this.moveTowardSpot(unit, waterPos!.x, waterPos!.y)); //  error for some reason.
-            moved = true;
-          }
-        }
-      }
-    }
-
     // If unit is guard, check range and go to attack!
-    if (unit.type === 'guard') {
-      // Check if any enemy units are in range.
-      const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
+    // if (unit.type === 'guard') {
+    //   // Check if any enemy units are in range.
+    //   const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
+    //
+    //   if (enemyUnitInRange != null && closestDistance < 6) { // todo fix.
+    //     const enemyUnit = enemyUnitInRange as Unit;
+    //     console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
+    //
+    //     // Move towards enemy unit.
+    //     ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
+    //
+    //     // TODO if blocked by land move randomly. todo
+    //     moved = true;
+    //   }
+    // } else if (unit.type === 'soldier') {
+    //   // Check if any enemy units are in range.
+    //   const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
+    //
+    //   if (enemyUnitInRange != null && closestDistance < 8) { // todo fix.
+    //     const enemyUnit = enemyUnitInRange as Unit;
+    //     console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
+    //
+    //     // Move towards enemy unit.
+    //     ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
+    //
+    //     // TODO if blocked by land move randomly. todo
+    //     if (this.isWalkableTerrain(x, y, unit)) {
+    //       moved = true;
+    //     } // else will move randomly later.
+    //   }
+    // } else if (unit.type === 'captain') {
+    //   // Check if any enemy units are in range.
+    //   const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
+    //
+    //   if (enemyUnitInRange != null && closestDistance < 20) {
+    //     const enemyUnit = enemyUnitInRange as Unit;
+    //     console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
+    //
+    //     // TODO Call to other units to go there.
+    //     const player: Player | undefined = this.getPlayers().find(p => p.id === enemyUnit.playerId);
+    //     // random chance to reset this one again...
+    //     // or should it target a unit???
+    //     if (player && player.targetX === null) {
+    //       player.targetX = enemyUnit.x;
+    //       player.targetY = enemyUnit.y;
+    //       console.log(`    &&& Player ${player.name} is setting alarm target on enemy unit at ${enemyUnit.x}, ${enemyUnit.y}`);
+    //     }
+    //
+    //
+    //     // Move towards enemy unit.
+    //     ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
+    //
+    //     // TODO if blocked by land move randomly. todo
+    //     if (this.isWalkableTerrain(x, y, unit)) {
+    //       moved = true;
+    //     } // else will move randomly later.
+    //   }
+    // }
 
-      if (enemyUnitInRange != null && closestDistance < 6) { // todo fix.
-        const enemyUnit = enemyUnitInRange as Unit;
-        console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
-
-        // Move towards enemy unit.
-        ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
-
-        // TODO if blocked by land move randomly. todo
-        moved = true;
-      }
-    } else if (unit.type === 'soldier') {
-      // Check if any enemy units are in range.
-      const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
-
-      if (enemyUnitInRange != null && closestDistance < 8) { // todo fix.
-        const enemyUnit = enemyUnitInRange as Unit;
-        console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
-
-        // Move towards enemy unit.
-        ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
-
-        // TODO if blocked by land move randomly. todo
-        if (this.isWalkableTerrain(x, y, unit)) {
-          moved = true;
-        } // else will move randomly later.
-      }
-    } else if (unit.type === 'captain') {
-      // Check if any enemy units are in range.
-      const { enemyUnitInRange, closestDistance } = this.findNearestEnemyUnit(unit);
-
-      if (enemyUnitInRange != null && closestDistance < 20) {
-        const enemyUnit = enemyUnitInRange as Unit;
-        console.log(`    Unit found enemy unit P${enemyUnit.playerId}:${enemyUnit.name} in range:${closestDistance} at ${enemyUnit.x}, ${enemyUnit.y}`);
-
-        // TODO Call to other units to go there.
-        const player: Player | undefined = this.getPlayers().find(p => p.id === enemyUnit.playerId);
-        // random chance to reset this one again...
-        // or should it target a unit???
-        if (player && player.targetX === null) {
-          player.targetX = enemyUnit.x;
-          player.targetY = enemyUnit.y;
-          console.log(`    &&& Player ${player.name} is setting alarm target on enemy unit at ${enemyUnit.x}, ${enemyUnit.y}`);
-        }
-
-
-        // Move towards enemy unit.
-        ({ x, y } = this.moveTowardSpot(unit, enemyUnit.x, enemyUnit.y));
-
-        // TODO if blocked by land move randomly. todo
-        if (this.isWalkableTerrain(x, y, unit)) {
-          moved = true;
-        } // else will move randomly later.
-      }
-    }
-    else if (unit.type === 'explorer' || unit.type === 'ship1') {
-      if (unit.moveDir === null) {
-        unit.moveDir = Math.floor(Math.random() * 6);
-      }
-      console.log(`    Unit explorer moving in dir ${unit.moveDir}`);
-
-      // TODO TEST.
-      // TODO make method.
-      // Move in a direction.
-      // 1-6 hex direction 1 north 23 4 south 56
-      if (unit.moveDir === 0) {
-        y--;
-      } else if (unit.moveDir === 1) {
-        x++;
-        if (unit.x % 2 === 0) {
-          y--;
-        }
-      } else if (unit.moveDir === 2) {
-        x++;
-        if (unit.x % 2 !== 0) {
-          y++;
-        }
-      } else if (unit.moveDir === 3) { // south
-        y++;
-      } else if (unit.moveDir === 4) {
-        x--;
-        if (unit.x % 2 !== 0) {
-          y++;
-        }
-      } else if (unit.moveDir === 5) {
-        x--;
-        if (unit.x % 2 === 0) {
-          y--;
-        }
-      }
-
-      // TODO if anything hit, change dir.
-      if (!this.isWalkable(x, y, unit)) {
-        unit.moveDir = Math.floor(Math.random() * 6);
-        console.log(`    *** Unit explorer hit blocker at ${x}, ${y}, choosing new dir now...=${unit.moveDir}`);
-      }
-      moved = true;
-
-      // TODO Later should run from enemies too...
+    // Randomly 1 in 10 make the ship move to nearby new location.
+    const r = Math.random();
+    // console.log(`    Random number = ${r} and unit.gotoX = ${unit.gotoX || 0}`);
+    if (r < 0.1 && unit.gotoX == null) {
+      // unit.moving = true;
+      // Set to 0.1 decimal.
+      // unit.gotoX = Math.random() * this.gridWidth;
+      // unit.gotoY = Math.random() * this.gridHeight;
+      unit.gotoX = Math.floor(this.seededRandom() * this.gridWidth * 10) / 10;
+      unit.gotoY = Math.floor(this.seededRandom() * this.gridHeight * 10) / 10;
+      console.log(`    ***Update: Unit ${unit.name} is going to ${unit.gotoX}, ${unit.gotoY}`);
     }
 
-    // If didnt do a specific move, just move randomly.
-    if (!moved) {
-      ({ x, y } = this.getRandomNeighbor(unit.x, unit.y));
-      // console.log("    Random movement now...")
-      // TODO maybe check their intelligence first.... buyable thingy.
-      if (!this.isWalkableTerrain(x, y, unit)) {
-        console.log("    RETRY Random movement now...");
-        ({ x, y } = this.getRandomNeighbor(unit.x, unit.y));
+    // Figure when they are stopped.
+    // if (!unit.moving) {
+    //   // unit.moveDir = Math.floor(Math.random() * 6);
+    // }
+
+    // console.log(`    Unit moving.`);
+
+    // TODO TEST.
+
+
+
+    // TODO Later should run from enemies too...
+
+    // Move now, one decimal towards our goal.
+    if (unit.gotoX !== null && unit.gotoY !== null) {
+      // TODO also check if close, then stop.
+      // See if we are there yet.
+      if (unit.x === unit.gotoX && unit.y === unit.gotoY) {
+        console.log(`    Unit ${unit.name} has arrived at ${unit.gotoX}, ${unit.gotoY}\n\n\n\n\n`);
+        unit.gotoX = null;
+        unit.gotoY = null;
+        return;
       }
-    }
-    // console.log(`  DEBUG: Moving unit ${unit.id} from x:${unit.x}, y:${unit.y} to x:${x}, y:${y}`);
+
+      // Move our speed partial forward now.
+      const dx = unit.gotoX - unit.x;
+      const dy = unit.gotoY - unit.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const speed = 0.1;  // hardcoded for now.
+      // Format this to one decimal point.
+      const speedX = Math.round(dx / dist * speed * 100) / 100;
+      const speedY = Math.round(dy / dist * speed * 100) / 100;
+      console.log(`    speedX=${speedX} speedY=${speedY}`);
+      // Format to one decimal point.
+      // x = unit.x + speedX;
+      // y = unit.y + speedY;
+      x = Math.round((unit.x + speedX) * 100) / 100;
+      y = Math.round((unit.y + speedY) * 100) / 100;
+      console.log(`    Unit ${unit.name} moving from ${unit.x}, ${unit.y} to ${x}, ${y}`);
+    } // if moving.
 
 
     // TODO If same team units bump into eachother, chance to upgrade if same unit.
+
+    // TODO if anything hit.
+    if (!this.isWalkable(x, y, unit)) {
+      unit.moveDir = Math.floor(Math.random() * 6);
+      console.log(`    *** Unit explorer hit blocker at ${x}, ${y}, choosing new dir now...=${unit.moveDir}`);
+    }
+    moved = true;
 
 
     // Check on map and valid move and empty spot, if not no move.
@@ -423,21 +263,22 @@ export class Game {
     //   return;
     // } else
     if (!this.isWalkable(x, y, unit)) {
-      // If unit bump into an enemy attack.
-      const unitAt = this.units.find(u => u.x === x && u.y === y);
-      if (unitAt) {
-        // console.log(`    DEBUG:Unit ${unit.id} bumped into unit ${unitAt.id}`);
-        if (unitAt.playerId !== unit.playerId) { // Cant attack yourself.
-          this.unitAttackUnit(unit, unitAt);
-        }
-      }
+      // // If unit bump into an enemy attack.
+      // const unitAt = this.units.find(u => u.x === x && u.y === y);
+      // if (unitAt) {
+      //   // console.log(`    DEBUG:Unit ${unit.id} bumped into unit ${unitAt.id}`);
+      //   if (unitAt.playerId !== unit.playerId) { // Cant attack yourself.
+      //     this.unitAttackUnit(unit, unitAt);
+      //   }
+      // }
       return;
     } else {
       // Save our actual new position now and claim land.
       unit.x = x;
       unit.y = y;
+
       // Claim hex land
-      this.gridOwners[x][y] = unit.playerId;
+      // this.gridOwners[x][y] = unit.playerId;
       return;
     }
   }
@@ -686,15 +527,14 @@ export class Game {
     this.addPlayer(player1);
     const player2 = new Player(2, 'Mobby', 'red');
     this.addPlayer(player2);
-    const player3 = new Player(3, 'Crag', 'yellow');
-    this.addPlayer(player3);
+    // const player3 = new Player(3, 'Crag', 'yellow');
+    // this.addPlayer(player3);
 
     // Add some test ships.
     let unit;
     unit = new Unit(player1.id, "Falazar", 'ship1', 10, 10, player1.color);
     this.addUnit(unit);
-    unit = new Unit(player1.id, "Falazar", 'ship1', 12, 10, player1.color);
-    this.addUnit(unit);
-
+    // unit = new Unit(player1.id, "Falazar", 'ship1', 12, 10, player1.color);
+    // this.addUnit(unit);
   }
 }

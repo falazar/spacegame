@@ -72,6 +72,7 @@
             background: transparent;
             cursor: move;
             z-index: 100;
+            /*pointer-events: auto; !* Allow pointer events *!*/
         }
 
         .toolbar {
@@ -133,29 +134,52 @@
   let units;
   let gridOwners;
 
+  let selectedShipId = null;
+  let selectedShip = null;
+
 
   // Draw a single unit, based on position.
-  function drawUnit(ctx, type, col, row, size, fillColor, text) {
+  // function drawUnit(ctx, type, col, row, size, fillColor, text) {
+  function drawShip(ctx, ship) {
     // console.log("DEBUG1: drawing unit now at ", col, row, text);
 
-    const x = col * cellSize;
-    const y = row * cellSize;
+    const x = ship.x * cellSize;
+    const y = ship.y * cellSize;
     // console.log("DEBUG2: Unit x y now at ", x, y, text+ " size = ", size);
 
     // Add in our ship graphic now.
     // todo make multiple ship types usable.
     const img = new Image();
     // img.src = '/images/ships/ship1.png';
-    img.src = '/images/ships/'+type+'.png';
+    img.src = '/images/ships/' + ship.type + '.png';
     img.onload = function () {
-      ctx.drawImage(img, x-cellSize/2, y-cellSize/2, 128, 128);
+      ctx.drawImage(img, x - cellSize / 2, y - cellSize / 2, 128, 128);
     };
 
     ctx.fillStyle = 'white';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, x+cellSize/2, y);
+    ctx.fillText(ship.playerName, x + cellSize / 2, y);
+
+    // Add a yellow circle around it if it is selected.
+    if (ship.id === selectedShipId) {
+      ctx.beginPath();
+      ctx.arc(x + cellSize / 2 + 10, y + cellSize / 2 + 5, cellSize, 0, 2 * Math.PI);
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+
+    // Draw a tracer line showing movement.
+    if (ship.gotoX && ship.gotoY) {
+      ctx.beginPath();
+      ctx.moveTo(x + cellSize / 2, y + cellSize / 2);
+      ctx.lineTo(ship.gotoX * cellSize + cellSize / 2, ship.gotoY * cellSize + cellSize / 2);
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
   }
 
   // Draws our graph paper lines now.
@@ -186,45 +210,12 @@
         // Draw the cell number
         const col = x / cellSize;
         const row = y / cellSize;
-        ctx.fillText(`${col},${row}`, x + cellSize / 2, y + cellSize / 2);
+        if (col % 5 === 0 && row % 5 === 0) {
+          ctx.fillText(`${col},${row}`, x + cellSize / 2, y + cellSize / 2);
+        }
       }
     }
   }
-
-
-  // function hexDistance(x1, y1, x2, y2) {
-  //   const xd = x1 - x2;
-  //   const yd = y1 - ((x1 - (x1 & 1)) / 2) - (y2 - (x2 - (x2 & 1)) / 2);
-  //   const dist = (Math.abs(xd) + Math.abs(xd + yd) + Math.abs(yd)) / 2;
-  //   return dist;
-  // }
-
-  // On Click grid listener.
-  overlay.addEventListener('click', function (event) {
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // TODO offset for however much we shifted
-
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
-
-    console.log(`Clicked map: (${col}, ${row}) `);
-
-    // Select or deselect a ship if clicked on.
-
-    // Note it may click close to the ship not exactly on it.
-    // Debug Test.
-    // Redraw the clicked hexagon with yellow fill color
-    // drawHexagon(ctx, col, row, cellSize, 'yellow', `(${col}, ${row})`);
-    // grid[col][row] = 0; // set to water.
-  });
-
-
-  // Render map
-  // TODO DO ME
-  // drawHexGrid();
 
 
   // Render units
@@ -233,7 +224,7 @@
   //   drawUnit(ctx, unit.x, unit.y, hexSize, unit.color, unit.type);
   // });
 
-  // TODO need to save grid to file. and load.
+  // TODO need to save map to file. and load.
 
 
   async function fetchUpdates() {
@@ -246,7 +237,7 @@
 
   function updateUnits(units) {
     units.forEach(unit => {
-      drawUnit(ctx, unit.type, unit.x, unit.y, cellSize, unit.color, unit.playerName);
+      drawShip(ctx, unit);
     });
   }
 
@@ -284,27 +275,144 @@
     document.querySelector('#other-troops').innerHTML = troopTotalsText;
   }
 
+  function findClosestShip(col, row) {
+    let closestShip = null;
+    let closestDist = 999999;
+    units.forEach(unit => {
+      // if (unit.type === 'ship') {
+      // NOTE: Could get slow here.
+      const dist = Math.sqrt((unit.x - col) ** 2 + (unit.y - row) ** 2);
+      // console.log("DEBUG: checking nearest dist = ", dist, " and name = ", unit.name);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestShip = unit;
+      }
+      // }
+    });
+
+    return closestShip;
+  }
+
+  // See if nearby, and return the ship.
+  function shipClickedOn(col, row) {
+    // Find nearest ship and see if close enough to click.
+    const clickedShip = findClosestShip(col, row);
+    console.log("DEBUG: clickedShip = ", clickedShip);
+
+    if (clickedShip) {
+      const dist = Math.sqrt((clickedShip.x - col) ** 2 + (clickedShip.y - row) ** 2);
+      if (dist > 1.5) {
+        console.log("DEBUG: too far away to click ship.");
+        return;
+      } else {
+        console.log("DEBUG: *** Clicked ship is close enough to select. ship = ", clickedShip);
+        return clickedShip;
+      }
+    }
+  }
+
+
+  // Add a listener for clicking on the map or ships or planets.
+  // This will allow us to select a ship or planet or something.
+
+  // START CHECK CANVAS LISTENERS.
+  // canvas.addEventListener('click', (event) => {
+  //   const rect = canvas.getBoundingClientRect();
+  //   const x = event.clientX - rect.left;
+  //   const y = event.clientY - rect.top;
+  //
+  //   console.log(`Canvas clicked at: (${x}, ${y})`);
+  //
+  //   // TODO Convert to grid coordinates.
+  //
+  //   // TODO See if a ship is clicked,
+  //
+  //   // TODO See if a planet or object is clicked.
+  // });
+  // END CHECK CANVAS LISTENERS.
+
+  // On Click grid listener.
+  overlay.addEventListener('click', function (event) {
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const col = Math.floor(x / cellSize);
+    const row = Math.floor(y / cellSize);
+
+    console.log(`\nClicked map: (${col}, ${row}) `);
+
+    // Select or deselect a ship if clicked on.
+    const clickedShip = shipClickedOn(col, row);
+    // Set selected and redraw with a halo.
+    if (!clickedShip || selectedShipId === clickedShip.id) {
+      selectedShipId = null;
+      selectedShip = null;
+      // todo redraw toolbar
+    } else {
+      selectedShipId = clickedShip.id;
+      selectedShip = clickedShip;
+      // todo redraw toolbar
+    }
+    // TODO trigger redraw probably.
+
+  });
+
   // START OVERLAY DRAG CODE.
-  let isDragging = false;
+  // And ship drag move code.
+  let isDragging = false; // dragging for whole map.
+  let isDraggingShip = false;
   let startX, startY;
 
   overlay.addEventListener('mousedown', (e) => {
     isDragging = true;
     startX = e.clientX;
     startY = e.clientY;
+
+    // TODO see if we are on a ship, then drag it around instead.
+    let rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    const col = Math.floor(x / cellSize);
+    const row = Math.floor(y / cellSize);
+    const clickedShip = shipClickedOn(col, row);
+    if (clickedShip) {
+      console.log("DEBUG: dragging ship = ", clickedShip);
+      // Move the ship.
+      // clickedShip.x += dx / cellSize;
+      // clickedShip.y += dy / cellSize;
+      // console.log("DEBUG: dragged ship = ", clickedShip);
+
+      selectedShipId = clickedShip.id;
+      selectedShip = clickedShip;
+
+      // TODO on drag drop if ship send to server now.
+
+      isDraggingShip = true;
+    }
+
   });
 
   // Allow dragging of full map here.
   overlay.addEventListener('mousemove', (e) => {
-    if (!isDragging) {
+    if (!isDragging && !isDraggingShip) {
       return;
     }
+
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
     // console.log(`Dragging: dx = ${dx}, dy = ${dy}`);
+
     // Perform your movement logic here
     startX = e.clientX;
     startY = e.clientY;
+
+
+    // Slide ship to new spot if needed.
+    // TODO
+    if (isDraggingShip) {
+      console.log("DEBUG: dragging ship = ", selectedShipId);
+      return;
+    }
 
     // Slide around asteroid layer.
     const asteroidField = document.getElementById('asteroidfield');
@@ -343,10 +451,20 @@
 
   overlay.addEventListener('mouseup', () => {
     isDragging = false;
+    isDraggingShip = false;
+
+    // TODO send ship update to server if moved!
+
+    // Re-enable pointer events
+    // overlay.style.pointerEvents = 'auto';
   });
 
   overlay.addEventListener('mouseleave', () => {
     isDragging = false;
+    isDraggingShip = false;
+
+    // Re-enable pointer events
+    // overlay.style.pointerEvents = 'auto';
   });
   // END OVERLAY
 

@@ -12,12 +12,17 @@ STAGE 1:
         Show Star System Name
     SHIPS:
         DONE - Show a shuttle/unit.
-        Show it moving properly.
-        Drag to move.
+        Show it moving properly -
+            - Do client side move with updates only from server.  Timing set right.
+        TODO - Drag to move.
+        Show path lines.
     INTERFACE:
         Get click on grid working
         Show Grid for debugging
         Pinch or scroll to zoom in/out.
+    GIT: get proper project set up.
+        Cleanup old code.
+    ADMIN: Invite scouter and adam to join, and others.
 
 STAGE 2:
     Add DB mysql.
