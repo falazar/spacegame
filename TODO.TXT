@@ -14,11 +14,12 @@ STAGE 1:
         DONE - Show a shuttle/unit.
         Show it moving properly -
             - Do client side move with updates only from server.  Timing set right.
-        TODO - Drag to move.
-        Show path lines.
+        DONE - Drag to move.
+        DONE - Show path lines.
+        DONE - add rotate correct on ship.
     INTERFACE:
-        Get click on grid working
-        Show Grid for debugging
+        DONE - Get click on grid working
+        DONE - Show Grid for debugging
         Pinch or scroll to zoom in/out.
     GIT: get proper project set up.
         Cleanup old code.

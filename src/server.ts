@@ -14,6 +14,9 @@ app.set('views', path.join(__dirname, 'views'));
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Parse json.
+app.use(express.json());
+
 // Setup db for all to share.
 // let db: Database<sqlite3.Database, sqlite3.Statement>;
 
@@ -25,8 +28,6 @@ const game = new Game(1234567);
 // Route to display main game page.
 app.get('/', async (req, res) => {
   console.log("Rendering main page. ")
-
-  console.log("DEBUG1: game.gridWidth = " + game.gridWidth);
 
   // Get units data
   const units = game.getUnits();
@@ -45,6 +46,26 @@ app.get('/fetch-updates', async (req, res) => {
   };
   res.json(updates);
 });
+
+app.post('/ship-new-goto', async (req, res) => {
+  // console.log(" DEBUG req = " + JSON.stringify(req));
+  // console.log(" DEBUG req.body = " + JSON.stringify(req.body));
+
+  const { shipId, x, y } = req.body;
+  console.log(" ***MOVING ship manually, new target - x: " + x + ", y: " + y);
+  game.setShipNewGoto(shipId, x, y);
+  res.json({ success: true });
+});
+
+
+
+
+//   const { shipId, x, y } = req.query;
+//   console.log("\n\n\n\n\nTESTING");
+//   console.log(" MOVING ship manually, new target - x: " + x + ", y: " + y);
+//   game.setShipNewGoto(shipId as string, parseInt(x as string), parseInt(y as string));
+//   res.json({ success: true });
+// });
 
 const gameSpeed = 1; // seconds
 setInterval(() => {

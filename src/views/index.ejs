@@ -56,8 +56,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            /*width: 100%;*/
-            /*height: 100%;*/
+            width: 3200px;
+            height: 1800px;
             /* may have to hardocde size here?*/
             border: 1px solid black;
             z-index: 70;
@@ -67,8 +67,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            width: 3200px;
+            height: 1800px;
+            /* may have to hardocde size here?*/
             background: transparent;
             cursor: move;
             z-index: 100;
@@ -102,12 +103,7 @@
 </head>
 <body>
 
-<!--<img id="pinprick_stars" src="/images/background_starfields/star_field1.png"-->
-<!--     style="position: absolute; top: 0px; left: 0px; width:50%">-->
 <div class="pinprick-stars" id="pinprick_stars"></div>
-
-<!--<img id="asteroid_starfield" src="/images/asteroid_fields/asteroid_field1.png" alt="Asteroid Field"-->
-<!--     style="position: absolute; top: 0px; left: 0px; width:50%">-->
 
 <div class="asteroid-field" id="asteroidfield"></div>
 
@@ -123,8 +119,6 @@
   const cellSize = 50;
   const cellHeight = cellSize;
   const cellWidth = cellSize;
-  // const hexVertDist = cellHeight * 0.5; // Adjust vertical distance
-  // const hexHorizDist = cellWidth * 1.5; // Adjust horizontal distance
 
   // const gridWidth = 30;
   // const gridHeight = 30;
@@ -138,8 +132,12 @@
   let selectedShip = null;
 
 
-  // Draw a single unit, based on position.
-  // function drawUnit(ctx, type, col, row, size, fillColor, text) {
+  // Render units
+  units = <%- JSON.stringify(units) %>;
+
+  // TODO need to save map to file. and load.
+
+  // Draw ship on canvas now, rotate to face target, and path line, and selected yellow circle.
   function drawShip(ctx, ship) {
     // console.log("DEBUG1: drawing unit now at ", col, row, text);
 
@@ -147,15 +145,7 @@
     const y = ship.y * cellSize;
     // console.log("DEBUG2: Unit x y now at ", x, y, text+ " size = ", size);
 
-    // Add in our ship graphic now.
-    // todo make multiple ship types usable.
-    const img = new Image();
-    // img.src = '/images/ships/ship1.png';
-    img.src = '/images/ships/' + ship.type + '.png';
-    img.onload = function () {
-      ctx.drawImage(img, x - cellSize / 2, y - cellSize / 2, 128, 128);
-    };
-
+    // Show owner name.
     ctx.fillStyle = 'white';
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
@@ -171,16 +161,66 @@
       ctx.stroke();
     }
 
-    // Draw a tracer line showing movement.
-    if (ship.gotoX && ship.gotoY) {
-      ctx.beginPath();
-      ctx.moveTo(x + cellSize / 2, y + cellSize / 2);
-      ctx.lineTo(ship.gotoX * cellSize + cellSize / 2, ship.gotoY * cellSize + cellSize / 2);
-      ctx.strokeStyle = 'white';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
+    drawShipPath(ctx, ship, x, y);
+    drawShipImage(ctx, ship, x, y);
   }
+
+  function drawShipPath(ctx, ship, x, y) {
+    // Draw a tracer line showing movement.
+    ship.angle = 0; // DEBUG DEFAULT REMOVE LATER.
+    if (ship.gotoX == null) {
+      return;
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(x + cellSize / 2, y + cellSize / 2);
+    ctx.lineTo(ship.gotoX * cellSize + cellSize / 2, ship.gotoY * cellSize + cellSize / 2);
+    ctx.setLineDash([5, 5]); // Set dashed line pattern
+    ctx.strokeStyle = 'grey'; // Set line color to grey
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset to solid line
+
+
+    // Set direction angle for ship now.
+    const dx = ship.gotoX - ship.x;
+    const dy = ship.gotoY - ship.y;
+    const angle = Math.atan2(dy, dx);
+    ship.angle = angle;
+  }
+
+  function drawShipImage(ctx, ship, x, y) {
+    // Add in our ship graphic now.
+    // todo make multiple ship types usable.
+    // TODO make simple method.
+    const img = new Image();
+    img.src = '/images/ships/' + ship.type + '.png';
+    img.onload = function () {
+      const imgWidth = 128;
+      const imgHeight = 128;
+
+      // Rotate ship to this angle.
+      // Save the current context state
+      ctx.save();
+
+      // Move the origin to the center of the image
+      // ctx.translate(x + imgWidth / 2, y + imgHeight / 2);
+      ctx.translate(x + cellSize / 2, y + cellSize / 2);
+
+      // NOTE: Orig ship points SW at start, adjust for that.
+      // Rotate the context to the desired angle
+      // Add 180 + 45
+      // TODO start all ship images pointing to 0
+      ctx.rotate(ship.angle + (Math.PI / 8) * 10);
+
+      // Draw the image, offsetting by half the image size to center it
+      ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+
+      // Restore the context to its original state
+      ctx.restore();
+    };
+  }
+
 
   // Draws our graph paper lines now.
   function drawGrid(ctx, cellSize) {
@@ -216,16 +256,6 @@
       }
     }
   }
-
-
-  // Render units
-  units = <%- JSON.stringify(units) %>;
-  // units.forEach(unit => {
-  //   drawUnit(ctx, unit.x, unit.y, hexSize, unit.color, unit.type);
-  // });
-
-  // TODO need to save map to file. and load.
-
 
   async function fetchUpdates() {
     const response = await fetch('/fetch-updates');
@@ -297,12 +327,12 @@
   function shipClickedOn(col, row) {
     // Find nearest ship and see if close enough to click.
     const clickedShip = findClosestShip(col, row);
-    console.log("DEBUG: clickedShip = ", clickedShip);
+    // console.log("DEBUG: clickedShip = ", clickedShip);
 
     if (clickedShip) {
       const dist = Math.sqrt((clickedShip.x - col) ** 2 + (clickedShip.y - row) ** 2);
       if (dist > 1.5) {
-        console.log("DEBUG: too far away to click ship.");
+        // console.log("DEBUG: too far away to click ship.");
         return;
       } else {
         console.log("DEBUG: *** Clicked ship is close enough to select. ship = ", clickedShip);
@@ -370,8 +400,8 @@
 
     // TODO see if we are on a ship, then drag it around instead.
     let rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
     const col = Math.floor(x / cellSize);
     const row = Math.floor(y / cellSize);
     const clickedShip = shipClickedOn(col, row);
@@ -410,7 +440,9 @@
     // Slide ship to new spot if needed.
     // TODO
     if (isDraggingShip) {
-      console.log("DEBUG: dragging ship = ", selectedShipId);
+      // console.log("DEBUG: dragging ship = ", selectedShipId);
+
+      // Draw a line where path will go.
       return;
     }
 
@@ -449,9 +481,48 @@
     pinprick_stars.style.transform = `translate(${currentX + dx * 0.03}px, ${currentY + dy * 0.03}px)`;
   });
 
-  overlay.addEventListener('mouseup', () => {
+  overlay.addEventListener('mouseup', (e) => {
     isDragging = false;
-    isDraggingShip = false;
+
+    if (isDraggingShip) {
+      isDraggingShip = false;
+
+      // Send ship update to server.
+      // console.log("DEBUG: dragged ship  ");
+      // New goto location is what.
+      let rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      // console.log("DEBUG: dragged ship to x y = ", x, y);
+      const col = Math.floor(x / cellSize);
+      const row = Math.floor(y / cellSize);
+      console.log("DEBUG: dragged ship to col row = ", col, row);
+
+      // Check distance is > 1.5 or ship not really dragged.
+      const dist = Math.sqrt((selectedShip.x - (x / cellSize)) ** 2 + (selectedShip.y - (y / cellSize)) ** 2);
+      if (dist < 1) {
+        // console.log("DEBUG: dragged ship not far enough to move.");
+        return;
+      }
+
+      selectedShip.gotoX = col;
+      selectedShip.gotoY = row;
+
+      // Pass new value back to server.
+      fetch('/ship-new-goto', {
+        method: 'post',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shipId: selectedShip.id,  // Ship ID
+          x: col,  // New X
+          y: row,  // New Y
+        }),
+      });
+      // TODO make this secure, encrypt or key or such.
+    }
+
 
     // TODO send ship update to server if moved!
 

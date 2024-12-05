@@ -14,6 +14,7 @@ export class Unit {
   health: number;
   attack: number;
   moveDir: number | null;
+  moving: boolean = false;
   gotoX: number | null;
   gotoY: number | null;
   // TODO Can I do this as a pair? coords?
@@ -31,8 +32,9 @@ export class Unit {
     this.gotoX = null;
     this.gotoY = null;
 
+    // TODO change for ships
     // Get health and attack and stats based on type.
-    if (type === 'trainer') {
+    if (type === 'ship1') {
       this.health = 20;
       this.attack = 1;
     } else if (type === 'guard') {
