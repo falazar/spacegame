@@ -1,14 +1,13 @@
 
 TODO LIST:
 
-STAGE 1:
+STAGE 1: 10/16
     DONE - Add background starfield image.
     DONE - Get generic background.
-    STAR SYSTEM:
-        Show star system.
-        Show star at center.
+    STAR SYSTEM: Show star system.
+        DONE - Show star at center.
         Show X planets.
-        Show planet orbits.
+        DONE - Show planet orbits.
         Show Star System Name
     SHIPS:
         DONE - Show a shuttle/unit.
@@ -26,7 +25,7 @@ STAGE 1:
     ADMIN: Invite scouter and adam to join, and others.
 
 STAGE 2:
-    Add DB mysql.
+    DB: Add DB mysql.
     PLANETS:
         Have planets actually orbit.
         Have diff planet sizes.

@@ -257,6 +257,33 @@
     }
   }
 
+  function drawStar(ctx, cellSize) {
+    const centerX = (gridWidth / 2) * cellSize;
+    const centerY = (gridHeight / 2) * cellSize;
+    const radius = (cellSize * 5) / 2;
+
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = 'yellow';
+    ctx.fill();
+    ctx.strokeStyle = 'orange';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+  }
+
+  function drawOrbit(ctx, cellSize, dist) {
+    const centerX = (gridWidth / 2) * cellSize;
+    const centerY = (gridHeight / 2) * cellSize;
+    const radiusX = dist * cellSize;
+    const radiusY = (dist * cellSize) * 0.6; // Slightly oval shape
+
+    ctx.beginPath();
+    ctx.ellipse(centerX, centerY, radiusX, radiusY, 0, 0, 2 * Math.PI);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
   async function fetchUpdates() {
     const response = await fetch('/fetch-updates');
     const updates = await response.json();
@@ -265,7 +292,7 @@
     return updates;
   }
 
-  function updateUnits(units) {
+  function drawShips(units) {
     units.forEach(unit => {
       drawShip(ctx, unit);
     });
@@ -546,14 +573,31 @@
     players = updates.players;
     // gridOwners = updates.gridOwners;
 
+    // TODO make Draw System method instead.
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+
+    // TODO pass all this thru in updates instead.
+    drawStar(ctx, cellSize); // Draw the star at the center
+
+    // TODO make draw Planets method next.
+    drawOrbit(ctx, cellSize, 8); // Draw the orbit around the star
+    drawOrbit(ctx, cellSize, 16); // Draw the orbit around the star
+    drawOrbit(ctx, cellSize, 20); // Draw the orbit around the star
+    drawOrbit(ctx, cellSize, 24); // Draw the orbit around the star
+    drawOrbit(ctx, cellSize, 28); // Draw the orbit around the star
+    // Max of 28 to fix map.
+    // At least 4 apart to fit a planet.
+    // Supports 5-6 planets in the area.
 
     // Debug stuffs draw grid.
     drawGrid(ctx, cellSize);
 
-    updateUnits(updates.units);
+    drawShips(updates.units);
+
+
     // updateToolbar();
     // console.log("Updated units. ")
+
   }, 400 * gameSpeed);
 </script>
 
@@ -567,6 +611,8 @@
         <div class="stat" id="stat-gold">Gold: 100<br></div>
         <div class="stat" id="other-troops">Player 2 Troops: 5<br>Player 3 Troops: 3<br>Player 4 Troops: 2<br></div>
     </div>
+
+    <img src="/images/aliens/silver_aliens.png" alt="Aliens" style="width: 100%;">
 </div>
 
 </body>
