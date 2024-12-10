@@ -1,7 +1,7 @@
 
 TODO LIST:
 
-STAGE 1: 10/16
+STAGE 1: 11/16
     DONE - Add background starfield image.
     DONE - Get generic background.
     STAR SYSTEM: Show star system.
@@ -19,10 +19,11 @@ STAGE 1: 10/16
     INTERFACE:
         DONE - Get click on grid working
         DONE - Show Grid for debugging
-        Pinch or scroll to zoom in/out.
-    GIT: get proper project set up.
+        DONE - Pinch or scroll to zoom in/out.
+    GIT: DONE - get proper project set up.
         Cleanup old code.
-    ADMIN: Invite scouter and adam to join, and others.
+    ADMIN: DONE - Invite scouter
+            and adam to join, and others.
 
 STAGE 2:
     DB: Add DB mysql.

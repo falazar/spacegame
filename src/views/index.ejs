@@ -131,6 +131,12 @@
   let selectedShipId = null;
   let selectedShip = null;
 
+  let zoom = 1
+  const zoomFactor = 1.01
+  let initialPinchDistance = null;
+
+
+
 
   // Render units
   units = <%- JSON.stringify(units) %>;
@@ -202,6 +208,7 @@
       // Rotate ship to this angle.
       // Save the current context state
       ctx.save();
+      ctx.scale(zoom, zoom); // Apply the scale transformation
 
       // Move the origin to the center of the image
       // ctx.translate(x + imgWidth / 2, y + imgHeight / 2);
@@ -566,17 +573,52 @@
   });
   // END OVERLAY
 
-  const gameSpeed = 3; // seconds
-  setInterval(async () => {
-    const updates = await fetchUpdates();
-    units = updates.units;
-    players = updates.players;
-    // gridOwners = updates.gridOwners;
+  // Mouse wheel zooming.  TODO test
+  overlay.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    console.log("DEBUG: wheel zoom event = ", event);
+
+    if (event.deltaY < 0) {
+      // Zoom in
+      zoom *= zoomFactor;
+    } else {
+      // Zoom out
+      zoom /= zoomFactor;
+    }
+    console.log("DEBUG: zoom = ", zoom);
+
+    // Bounds limits.
+    if (zoom < 0.3) {
+      zoom = 0.3;
+    } else if (zoom > 2) {
+      zoom = 2;
+    }
+
+    // Adjust the size of the asteroid field
+    // const asteroidField = document.getElementById('asteroidfield');
+    // if (asteroidField) {
+    //   asteroidField.style.transform = `scale(${zoom})`;
+    // }
+    // // not centered.
+    //
+    // // Adjust the size of the pinprick stars
+    // const pinprickStars = document.getElementById('pinprick_stars');
+    // if (pinprickStars) {
+    //   pinprickStars.style.transform = `scale(${zoom})`;  // not working?
+    // }
+
+    drawGameMap(units);
+  });
+
+
+  function drawGameMap(units) {
+    ctx.save(); // Save the current context state
 
     // TODO make Draw System method instead.
     ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+    // TODO doesnt center on mouse point, and doesnt shrink backgrounds slightly.
+    ctx.scale(zoom, zoom); // Apply the scale transformation
 
-    // TODO pass all this thru in updates instead.
     drawStar(ctx, cellSize); // Draw the star at the center
 
     // TODO make draw Planets method next.
@@ -592,8 +634,19 @@
     // Debug stuffs draw grid.
     drawGrid(ctx, cellSize);
 
-    drawShips(updates.units);
+    drawShips(units);
+    ctx.restore(); // Restore the context state
+  }
 
+
+  const gameSpeed = 3; // seconds
+  setInterval(async () => {
+    const updates = await fetchUpdates();
+    units = updates.units;
+    players = updates.players;
+    // gridOwners = updates.gridOwners;
+
+    drawGameMap(updates.units);
 
     // updateToolbar();
     // console.log("Updated units. ")
