@@ -99,6 +99,26 @@
         .stat {
             font-size: 18px;
         }
+
+        .player-info {
+            font-size: 22px;
+        }
+
+        .star-system-banner {
+            position: absolute;
+            top: 120px;
+            left: 50%;
+            /*transform: translateX(-50%);*/
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            z-index: 120;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -124,6 +144,7 @@
   // const gridHeight = 30;
   const gridWidth = <%= gridWidth %>;
   const gridHeight = <%= gridHeight %>;
+  let starSystem;
   let players;
   let units;
   let gridOwners;
@@ -134,8 +155,6 @@
   let zoom = 1
   const zoomFactor = 1.01
   let initialPinchDistance = null;
-
-
 
 
   // Render units
@@ -400,8 +419,8 @@
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
+    const col = Math.floor(x / (cellSize * zoom));
+    const row = Math.floor(y / (cellSize * zoom));
 
     console.log(`\nClicked map: (${col}, ${row}) `);
 
@@ -436,15 +455,12 @@
     let rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const col = Math.floor(x / cellSize);
-    const row = Math.floor(y / cellSize);
+    const col = Math.floor(x / (cellSize * zoom));
+    const row = Math.floor(y / (cellSize * zoom));
     const clickedShip = shipClickedOn(col, row);
     if (clickedShip) {
-      console.log("DEBUG: dragging ship = ", clickedShip);
-      // Move the ship.
-      // clickedShip.x += dx / cellSize;
-      // clickedShip.y += dy / cellSize;
-      // console.log("DEBUG: dragged ship = ", clickedShip);
+      console.log("DEBUG: dragging ship start = ", clickedShip);
+      // Move the ship in drag area.
 
       selectedShipId = clickedShip.id;
       selectedShip = clickedShip;
@@ -528,12 +544,13 @@
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       // console.log("DEBUG: dragged ship to x y = ", x, y);
-      const col = Math.floor(x / cellSize);
-      const row = Math.floor(y / cellSize);
+      // todo make var (cellSize * zoom)
+      const col = Math.floor(x / (cellSize * zoom));
+      const row = Math.floor(y / (cellSize * zoom));
       console.log("DEBUG: dragged ship to col row = ", col, row);
 
       // Check distance is > 1.5 or ship not really dragged.
-      const dist = Math.sqrt((selectedShip.x - (x / cellSize)) ** 2 + (selectedShip.y - (y / cellSize)) ** 2);
+      const dist = Math.sqrt((selectedShip.x - (x / (cellSize * zoom))) ** 2 + (selectedShip.y - (y / (cellSize * zoom))) ** 2);
       if (dist < 1) {
         // console.log("DEBUG: dragged ship not far enough to move.");
         return;
@@ -642,9 +659,14 @@
   const gameSpeed = 3; // seconds
   setInterval(async () => {
     const updates = await fetchUpdates();
+    starSystem = updates.starSystem;
     units = updates.units;
     players = updates.players;
     // gridOwners = updates.gridOwners;
+
+    // const starSystemName = "Alpha Centauri"; // Replace with your dynamic star system name
+    document.getElementById('starSystemBanner').textContent = starSystem.name + " Star System";
+
 
     drawGameMap(updates.units);
 
@@ -654,10 +676,12 @@
   }, 400 * gameSpeed);
 </script>
 
+<div class="star-system-banner" id="starSystemBanner"></div>
+
 <div class="toolbar">
     <!-- Toolbar content goes here -->
     <div class="player-info">Player Name<br></div>
-    <div class="stats">
+    <div class="ship-stats">
         <div class="stat" id="stat-troops">Troops: 10<br></div>
         <div class="stat" id="stat-enemy-troops">Enemy Troops: 8<br></div>
         <div class="stat" id="stat-map-captured">Map Captured: 50%<br></div>
@@ -665,7 +689,7 @@
         <div class="stat" id="other-troops">Player 2 Troops: 5<br>Player 3 Troops: 3<br>Player 4 Troops: 2<br></div>
     </div>
 
-    <img src="/images/aliens/silver_aliens.png" alt="Aliens" style="width: 100%;">
+<!--    <img src="/images/aliens/silver_aliens.png" alt="Aliens" style="width: 100%;">-->
 </div>
 
 </body>

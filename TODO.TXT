@@ -1,14 +1,14 @@
 
 TODO LIST:
 
-STAGE 1: 11/16
+STAGE 1: 12/16
     DONE - Add background starfield image.
     DONE - Get generic background.
     STAR SYSTEM: Show star system.
         DONE - Show star at center.
-        Show X planets.
+        - Show X planets.
         DONE - Show planet orbits.
-        Show Star System Name
+        DONE - Show Star System Name
     SHIPS:
         DONE - Show a shuttle/unit.
         Show it moving properly -

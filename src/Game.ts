@@ -4,18 +4,21 @@ import { Unit } from './Unit';
 import * as assert from "node:assert";
 
 export class Game {
+  private starSystem: { id: string, name: string };
   private players: Player[];
   private units: Unit[];
   private seed: number;
   gridWidth = 63; // Number of grid squares.
   gridHeight = 35;
   grid = new Array(this.gridHeight).fill(1).map(() => new Array(this.gridWidth).fill(1));
-  gridOwners = new Array(this.gridHeight).fill(0).map(() => new Array(this.gridWidth).fill(0));
+
+  // gridOwners = new Array(this.gridHeight).fill(0).map(() => new Array(this.gridWidth).fill(0));
 
   constructor(seed: number) {
+    this.seed = seed;
+    this.starSystem = { id: '', name: '' };
     this.players = [];
     this.units = [];
-    this.seed = seed;
   }
 
   start() {
@@ -26,6 +29,12 @@ export class Game {
   }
 
   addInitialGameData() {
+    // Add test star system now.
+    this.starSystem = {
+      id: '12345',
+      name: 'Eridani',
+    }
+
     // Add test players.
     const player1 = new Player(1, 'Falazar', 'blue');
     this.addPlayer(player1);
@@ -155,6 +164,10 @@ export class Game {
     this.units.forEach((unit) => {
       console.log(unit);
     });
+  }
+
+  getStarSystem() {
+    return this.starSystem;
   }
 
   getUnits() {

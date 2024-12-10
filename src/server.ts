@@ -40,6 +40,7 @@ app.get('/fetch-updates', async (req, res) => {
   // console.log("DEBUG2: units = " + JSON.stringify(units));
 
   const updates = {
+    starSystem: game.getStarSystem(),
     units,
     players: game.getPlayers(),
     // gridOwners: game.gridOwners
