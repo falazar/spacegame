@@ -31,17 +31,28 @@ STAGE 2:
         Have planets actually orbit.
         Have diff planet sizes.
         Add some moons.
-        Name each planet with Taylor I etc heading away.
+        Name each planet with Taylor I, II, etc heading away.
     RESOURCES:
-        Add resource collection from asteroids, planets, moons?
         Add resource types.
+        Add resource collection from asteroids, planets, moons?
     GRAPHICS:
         Add fog of war.
+    TOOLBAR:
+        Add fleet info when clicked.
+        Add system toolbar information when name clicked.
+        Add player info toolbar.
+        Add planet info toolbar
+    SHIPS:
+        Add Enemy ships.
 
 STAGE 3:
+    Add possible aliens
     Add landing on planets.
     Add fighting.
     Add AI.
     Generate new random maps.
-
     Add asteroid belts.
+    Add asteroid ming and resources.
+    Add buildings - in space station?
+    Add tech tree.
+    Add larger galaxy section map.

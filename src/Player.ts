@@ -3,14 +3,12 @@ export class Player {
   id: number;
   name: string;
   color: string;
-  targetX: number | null;
-  targetY: number | null;
+  species: string;
 
-  constructor(id: number, name: string, color: string) {
+  constructor(id: number, name: string, color: string, species: string) {
     this.id = id;
     this.name = name;
     this.color = color;
-    this.targetX = null;
-    this.targetY = null;
+    this.species = 'Human';
   }
 }

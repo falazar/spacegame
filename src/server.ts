@@ -36,15 +36,12 @@ app.get('/', async (req, res) => {
 });
 
 app.get('/fetch-updates', async (req, res) => {
-  const units = game.getUnits();
-  // console.log("DEBUG2: units = " + JSON.stringify(units));
-
   const updates = {
-    starSystem: game.getStarSystem(),
-    units,
-    players: game.getPlayers(),
-    // gridOwners: game.gridOwners
+    starSystem: game.getStarSystem(), // todo send this once on load only!!!
+    players: game.getPlayers(), // todo send once or when changed.
+    units: game.getUnits()  // todo only show ships changed.
   };
+
   res.json(updates);
 });
 

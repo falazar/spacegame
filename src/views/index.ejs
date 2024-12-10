@@ -105,9 +105,9 @@
         }
 
         .star-system-banner {
-            position: absolute;
-            top: 120px;
-            left: 50%;
+            position: fixed;
+            top: -5px;
+            left: 40%;
             /*transform: translateX(-50%);*/
             background-color: rgba(0, 0, 0, 0.7);
             color: white;
@@ -283,7 +283,7 @@
     }
   }
 
-  function drawStar(ctx, cellSize) {
+  function drawStar() {
     const centerX = (gridWidth / 2) * cellSize;
     const centerY = (gridHeight / 2) * cellSize;
     const radius = (cellSize * 5) / 2;
@@ -423,21 +423,6 @@
     const row = Math.floor(y / (cellSize * zoom));
 
     console.log(`\nClicked map: (${col}, ${row}) `);
-
-    // Select or deselect a ship if clicked on.
-    const clickedShip = shipClickedOn(col, row);
-    // Set selected and redraw with a halo.
-    if (!clickedShip || selectedShipId === clickedShip.id) {
-      selectedShipId = null;
-      selectedShip = null;
-      // todo redraw toolbar
-    } else {
-      selectedShipId = clickedShip.id;
-      selectedShip = clickedShip;
-      // todo redraw toolbar
-    }
-    // TODO trigger redraw probably.
-
   });
 
   // START OVERLAY DRAG CODE.
@@ -451,24 +436,30 @@
     startX = e.clientX;
     startY = e.clientY;
 
-    // TODO see if we are on a ship, then drag it around instead.
+    // See if we are dragging on a ship, then drag it around instead.
     let rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const col = Math.floor(x / (cellSize * zoom));
     const row = Math.floor(y / (cellSize * zoom));
     const clickedShip = shipClickedOn(col, row);
+
     if (clickedShip) {
       console.log("DEBUG: dragging ship start = ", clickedShip);
-      // Move the ship in drag area.
-
-      selectedShipId = clickedShip.id;
-      selectedShip = clickedShip;
-
-      // TODO on drag drop if ship send to server now.
-
       isDraggingShip = true;
     }
+
+    if (!clickedShip || selectedShipId === clickedShip.id) {
+      selectedShipId = null;
+      selectedShip = null;
+      isDraggingShip = false;
+      // todo redraw toolbar
+    } else {
+      selectedShipId = clickedShip.id;
+      selectedShip = clickedShip;
+      // todo redraw toolbar
+    }
+    // TODO cant drag a ship after selecting one, arghhh. bug.
 
   });
 
@@ -624,11 +615,13 @@
     //   pinprickStars.style.transform = `scale(${zoom})`;  // not working?
     // }
 
-    drawGameMap(units);
+    drawGameMap(starSystem, units);
   });
 
 
-  function drawGameMap(units) {
+  // Given star system information and ships information.
+  // Clear our canvas and redraw our map now.
+  function drawGameMap(starSystem, units) {
     ctx.save(); // Save the current context state
 
     // TODO make Draw System method instead.
@@ -636,25 +629,57 @@
     // TODO doesnt center on mouse point, and doesnt shrink backgrounds slightly.
     ctx.scale(zoom, zoom); // Apply the scale transformation
 
-    drawStar(ctx, cellSize); // Draw the star at the center
+    drawStar(); // Draw the star at the center
 
-    // TODO make draw Planets method next.
-    drawOrbit(ctx, cellSize, 8); // Draw the orbit around the star
-    drawOrbit(ctx, cellSize, 16); // Draw the orbit around the star
-    drawOrbit(ctx, cellSize, 20); // Draw the orbit around the star
-    drawOrbit(ctx, cellSize, 24); // Draw the orbit around the star
-    drawOrbit(ctx, cellSize, 28); // Draw the orbit around the star
-    // Max of 28 to fix map.
-    // At least 4 apart to fit a planet.
-    // Supports 5-6 planets in the area.
+    // For each planet draw orbits now.
+    starSystem.planets.forEach(pl => {
+      drawPlanet(pl); // Draw the planet
+    });
 
     // Debug stuffs draw grid.
     drawGrid(ctx, cellSize);
+    // TODO add a hotkey to toggle grid on and off...
 
     drawShips(units);
     ctx.restore(); // Restore the context state
   }
 
+  // Given our planet object, draw the orbit and planet there.
+  function drawPlanet(planet) {
+    drawOrbit(ctx, cellSize, planet.radius);
+
+    // Now draw a planet on it.
+    const centerX = (gridWidth / 2) * cellSize;
+    const centerY = (gridHeight / 2) * cellSize;
+
+    ctx.beginPath();
+    // Place the planet on the oval orbit path.
+    // 0.6 oval shape in orbit.
+    // TODO use image if we have it.
+    // todo get angle, place along path on angle.
+    // ctx.arc(centerX - planet.radius, centerY, planet.size, 0, 2 * Math.PI);
+    const posX = centerX + planet.radius * cellSize;
+    const posY = centerY;
+
+    ctx.arc(posX, posY, planet.size * 10, 0, 2 * Math.PI);
+
+    ctx.fillStyle = planet.color;
+    ctx.fill();
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Add the planet name.
+    ctx.font = '18px Arial';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(planet.name, posX, posY);
+    // TODO move to top of planet.
+
+    // TODO add onclick planets.
+
+  }
 
   const gameSpeed = 3; // seconds
   setInterval(async () => {
@@ -668,7 +693,7 @@
     document.getElementById('starSystemBanner').textContent = starSystem.name + " Star System";
 
 
-    drawGameMap(updates.units);
+    drawGameMap(starSystem, units);
 
     // updateToolbar();
     // console.log("Updated units. ")
@@ -677,6 +702,7 @@
 </script>
 
 <div class="star-system-banner" id="starSystemBanner"></div>
+<!--todo onclick to show stats.-->
 
 <div class="toolbar">
     <!-- Toolbar content goes here -->
@@ -689,7 +715,7 @@
         <div class="stat" id="other-troops">Player 2 Troops: 5<br>Player 3 Troops: 3<br>Player 4 Troops: 2<br></div>
     </div>
 
-<!--    <img src="/images/aliens/silver_aliens.png" alt="Aliens" style="width: 100%;">-->
+    <!--    <img src="/images/aliens/silver_aliens.png" alt="Aliens" style="width: 100%;">-->
 </div>
 
 </body>

@@ -1,10 +1,10 @@
-// src/Game.ts
 import { Player } from './Player';
 import { Unit } from './Unit';
 import * as assert from "node:assert";
+import { Planet } from "./Planet";
 
 export class Game {
-  private starSystem: { id: string, name: string };
+  private starSystem: { id: string, name: string, planets: Planet[] };
   private players: Player[];
   private units: Unit[];
   private seed: number;
@@ -12,11 +12,9 @@ export class Game {
   gridHeight = 35;
   grid = new Array(this.gridHeight).fill(1).map(() => new Array(this.gridWidth).fill(1));
 
-  // gridOwners = new Array(this.gridHeight).fill(0).map(() => new Array(this.gridWidth).fill(0));
-
   constructor(seed: number) {
     this.seed = seed;
-    this.starSystem = { id: '', name: '' };
+    this.starSystem = { id: '', name: '', planets: [] };
     this.players = [];
     this.units = [];
   }
@@ -33,12 +31,23 @@ export class Game {
     this.starSystem = {
       id: '12345',
       name: 'Eridani',
+      planets: [
+        new Planet(1, 'Eridani I', 'red', 'planet1', 6, 8),
+        new Planet(2, 'Eridani II', 'blue', 'planet1', 3, 16),
+        new Planet(3, 'Eridani III', 'green', 'planet1', 5, 20),
+        new Planet(4, 'Eridani IV', 'orange', 'planet1', 10, 24),
+        new Planet(5, 'Eridani V', 'purple', 'planet1', 3, 28)
+      ]
     }
+    // Max of 28 to fix map.
+    // At least 4 apart to fit a planet.
+    // Supports 5-6 planets in the area.
+
 
     // Add test players.
-    const player1 = new Player(1, 'Falazar', 'blue');
+    const player1 = new Player(1, 'Falazar', 'blue', 'human');
     this.addPlayer(player1);
-    const player2 = new Player(2, 'Mobby', 'red');
+    const player2 = new Player(2, 'Mobby', 'red', 'human');
     this.addPlayer(player2);
     // const player3 = new Player(3, 'Crag', 'yellow');
     // this.addPlayer(player3);
@@ -144,9 +153,6 @@ export class Game {
       // Save our actual new position now and claim land.
       unit.x = x;
       unit.y = y;
-
-      // Claim hex land
-      // this.gridOwners[x][y] = unit.playerId;
       return;
     }
   }
