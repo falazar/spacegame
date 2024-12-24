@@ -56,3 +56,13 @@ STAGE 3:
     Add buildings - in space station?
     Add tech tree.
     Add larger galaxy section map.
+
+
+GAMEPLAY EXAMPLES:
+  Our random star system is -2,20 western sector.
+  So we are about 20 out from galactic center.
+  in theory travel time, 20 hours to center (wormholes cut across many bounds though)
+    We have 4 connected system next to us to explore.
+
+
+

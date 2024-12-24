@@ -72,7 +72,7 @@ setInterval(() => {
 
 
 // TODO show land captured by each player. on toolbar,
-// TODO earn gold by mining?
+// TODO earn res by mining?
 
 // Start the server.
 app.listen(PORT, async () => {
@@ -80,8 +80,5 @@ app.listen(PORT, async () => {
 
   // Start the game
   game.start();
-
-  // show sample units. debug.
-  // game.showUnits();
 });
 

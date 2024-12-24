@@ -1,6 +1,7 @@
 # IntelliJ IDEA directories
 .idea/
 *.iml
+dist/
 
 # Node modules directory
 node_modules/
