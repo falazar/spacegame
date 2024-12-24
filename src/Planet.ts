@@ -5,6 +5,8 @@ export class Planet {
   image: string;
   size: number; // diameter of planet 1-9?
   radius: number; // orbit radius
+  x: number;
+  y: number;
   // description.
   // inhabited?
   // todo starSystem id
@@ -20,5 +22,7 @@ export class Planet {
     this.image = 'TEST';
     this.size = size;
     this.radius = radius;
+    this.x = 0;
+    this.y = 0;
   }
 }

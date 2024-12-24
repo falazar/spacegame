@@ -175,7 +175,7 @@
     ctx.font = '12px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(ship.playerName, x + cellSize / 2, y);
+    ctx.fillText(ship.playerName, x + cellSize / 2, y - 10);
 
     // Add a yellow circle around it if it is selected.
     if (ship.id === selectedShipId) {
@@ -205,7 +205,6 @@
     ctx.lineWidth = 3;
     ctx.stroke();
     ctx.setLineDash([]); // Reset to solid line
-
 
     // Set direction angle for ship now.
     const dx = ship.gotoX - ship.x;
@@ -394,26 +393,126 @@
     }
   }
 
+  // Check if an object was clicked at this location.
+  // TODO note, there may be overlapping objects later on.
+  function checkObjectClickedOn(col, row) {
+    // Find nearest star.
+    const clickedStar = findClosestStar(col, row);
+    if (clickedStar) {
+      const dist = Math.sqrt((clickedStar.x - col) ** 2 + (clickedStar.y - row) ** 2);
+      // TODO this needs to adjust based on star size????
+      if (dist <= 2) {
+        // console.log("DEBUG: *** Clicked star is close enough to hit. star = ", clickedStar);
+        onClickStar(clickedStar);
+        return;
+      }
+    }
+
+    // Find nearest planet.
+    const clickedPlanet = findClosestPlanet(col, row);
+    if (clickedPlanet) {
+      const dist = Math.sqrt((clickedPlanet.x - col) ** 2 + (clickedPlanet.y - row) ** 2);
+      // TODO this needs to adjust based on planet size????
+      if (dist <= 1) {
+        // console.log("DEBUG: *** Clicked planet is close enough to hit. planet = ", clickedPlanet);
+        onClickPlanet(clickedPlanet);
+        return;
+      }
+    }
+  }
+
+  // See if we hit near a star. TODO
+  function findClosestStar(col, row) {
+    let closestStar = null;
+
+    // Check the center x y of grid for the star location.
+    const centerX = gridWidth / 2;
+    const centerY = gridHeight / 2;
+    const dist = Math.sqrt((centerX - col) ** 2 + (centerY - row) ** 2);
+    // console.log("DEBUG: dist to star center = ", dist);
+
+    // TODO Need star name and stats and things OBJ.
+    const star = {
+      name: "Riedel",
+      x: centerX,
+      y: centerY,
+      size: 5,
+    };
+    // todo return distance on all these also to cut down math calls.
+    closestStar = star;
+
+    return closestStar;
+  }
+
+  // See if we hit near a planet.
+  function findClosestPlanet(col, row) {
+    let closestPlanet = null;
+    let closestDist = 999999;
+    starSystem.planets.forEach(planet => {
+      const dist = Math.sqrt((planet.x - col) ** 2 + (planet.y - row) ** 2);
+      // console.log(`DEBUG: checking nearest planet ${planet.name} at ${planet.x},${planet.y} and dist = ${dist}`);
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestPlanet = planet;
+      }
+    });
+
+    return closestPlanet;
+  }
+
+  // Actions to trigger on clicking a star
+  function onClickStar(star) {
+    console.log("DEBUG: Clicked on star = ", star);
+    updateToolbarForStar(star);
+  }
+
+  // Actions to trigger on clicking a planet
+  function onClickPlanet(planet) {
+    console.log("DEBUG: Clicked on planet = ", planet);
+    updateToolbarForPlanet(planet);
+  }
+
+  function updateToolbarForPlanet(planet) {
+    const toolbar = document.querySelector('.toolbar');
+    toolbar.innerHTML = `
+    <div class="planet-info">
+      <div class="stat">Planet Name: ${planet.name}</div>
+      <div class="stat">Size: ${planet.size}</div>
+      <div class="stat">Color: ${planet.color}</div>
+      <!-- TODO Add more planet stats here as needed -->
+
+Attack Planet - <br>
+Scan Planet for Resources - <br>
+Scan Planet for Defenses - <br>
+Manage Planet -  <br>
+    </div>
+  `;
+
+    // TODO show star
+    // show owner and species.
+    // show resources
+    // show missions?
+  }
+
+  function updateToolbarForStar(star) {
+    // TODO show star stats.
+    const toolbar = document.querySelector('.toolbar');
+    toolbar.innerHTML = `
+    <div class="star-info">
+      <div class="stat">Star Name: ${star.name}</div>
+        <div class="stat">Size: ${star.size}</div>
+        <div class="stat">Color: ${star.color}</div>
+        <div class="stat">Planets: cnt </div>
+<!--         possibly list all planets here clickable-->
+
+        <!-- Add more star stats here as needed -->
+    </div>
+    `;
+  }
+
 
   // Add a listener for clicking on the map or ships or planets.
   // This will allow us to select a ship or planet or something.
-
-  // START CHECK CANVAS LISTENERS.
-  // canvas.addEventListener('click', (event) => {
-  //   const rect = canvas.getBoundingClientRect();
-  //   const x = event.clientX - rect.left;
-  //   const y = event.clientY - rect.top;
-  //
-  //   console.log(`Canvas clicked at: (${x}, ${y})`);
-  //
-  //   // TODO Convert to grid coordinates.
-  //
-  //   // TODO See if a ship is clicked,
-  //
-  //   // TODO See if a planet or object is clicked.
-  // });
-  // END CHECK CANVAS LISTENERS.
-
   // On Click grid listener.
   overlay.addEventListener('click', function (event) {
     const rect = canvas.getBoundingClientRect();
@@ -423,6 +522,10 @@
     const row = Math.floor(y / (cellSize * zoom));
 
     console.log(`\nClicked map: (${col}, ${row}) `);
+
+    // Now see if any other objects are clicked, like planets, stars or asteroids.
+    // Or other ships? enemies.
+    checkObjectClickedOn(col, row);
   });
 
   // START OVERLAY DRAG CODE.
@@ -637,7 +740,7 @@
     });
 
     // Debug stuffs draw grid.
-    drawGrid(ctx, cellSize);
+    // drawGrid(ctx, cellSize);
     // TODO add a hotkey to toggle grid on and off...
 
     drawShips(units);
@@ -661,6 +764,11 @@
     const posX = centerX + planet.radius * cellSize;
     const posY = centerY;
 
+    // TEMP STATS
+    planet.x = posX / cellSize;
+    planet.y = posY / cellSize;
+    // TODO move all positions and stuff to server side, to allow movements there?
+
     ctx.arc(posX, posY, planet.size * 10, 0, 2 * Math.PI);
 
     ctx.fillStyle = planet.color;
@@ -675,30 +783,81 @@
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(planet.name, posX, posY);
-    // TODO move to top of planet.
-
-    // TODO add onclick planets.
-
+    // TODO move to top of planet?
   }
 
-  const gameSpeed = 3; // seconds
-  setInterval(async () => {
+  async function doUpdates() {
     const updates = await fetchUpdates();
     starSystem = updates.starSystem;
     units = updates.units;
     players = updates.players;
     // gridOwners = updates.gridOwners;
 
+    // TODO change this to only update ships that have changed NOT all of them all the time.
+
     // const starSystemName = "Alpha Centauri"; // Replace with your dynamic star system name
     document.getElementById('starSystemBanner').textContent = starSystem.name + " Star System";
 
-
+    // TODO move this out logically.
     drawGameMap(starSystem, units);
 
     // updateToolbar();
     // console.log("Updated units. ")
+  }
 
+  // Get updates from server, every second or so.
+  // const gameSpeed = 3;  // TODO not quite right here.
+  const gameSpeed = 10;
+  setInterval(async () => {
+    doUpdates();
   }, 400 * gameSpeed);
+
+
+  let moveCount = 0;
+  const movesPerSecond = 50;
+  // Move ships method.
+  setInterval(async () => {
+    moveCount++;
+
+    // TODO make two methods.
+    // Move ships towards their goto location.
+    units.forEach(unit => {
+      if (unit.gotoX == null) {
+        return;
+      }
+
+      // Move ship towards goto location.
+      const dx = unit.gotoX - unit.x;
+      const dy = unit.gotoY - unit.y;
+      const dist = Math.sqrt(dx ** 2 + dy ** 2);
+
+      // if arrived stop
+      if (dist < 0.1) {
+        // console.log("DEBUG: ship arrived at goto location. ");
+        unit.gotoX = null;
+        unit.gotoY = null;
+        return;
+      }
+
+      // Move ship closer to target. Note this needs to match server unit speeds.
+      unit.x += dx / dist * 0.01;
+      unit.y += dy / dist * 0.01;
+    });
+
+    // if (moveCount % 100 === 0) {
+    //   console.log(`DEBUG: ${moveCount} moved ships. `);
+    // }
+
+    // TODO need to double buffer canvas to stop flickering.
+    // https://www.google.com/search?num=10&sca_esv=d1299addba882a66&rlz=1C1GCEU_en-GBUS1079US1079&sxsrf=ADLYWIL-IvWVpnZOKqSoEeOKGcs9-qWySA:1735057586421&q=how+to+stop+flicker+on+drawing+canvas+fast+in+js&spell=1&sa=X&ved=2ahUKEwjSwemY6cCKAxUnMNAFHb4TGtcQBSgAegQIDBAB&biw=1536&bih=791&dpr=1.25
+    // Redraw whole map.
+    drawGameMap(starSystem, units);
+
+  }, 1000 / movesPerSecond); // 60 times a second.
+
+
+  // Start page.
+  doUpdates();
 </script>
 
 <div class="star-system-banner" id="starSystemBanner"></div>

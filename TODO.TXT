@@ -6,13 +6,13 @@ STAGE 1: 12/16
     DONE - Get generic background.
     STAR SYSTEM: Show star system.
         DONE - Show star at center.
-        - Show X planets.
+        DONE - Show X planets.
         DONE - Show planet orbits.
         DONE - Show Star System Name
     SHIPS:
         DONE - Show a shuttle/unit.
-        Show it moving properly -
-            - Do client side move with updates only from server.  Timing set right.
+        DONE - Show it moving properly -
+           DONE - Do client side move with updates only from server.  Timing set right.
         DONE - Drag to move.
         DONE - Show path lines.
         DONE - add rotate correct on ship.
@@ -23,25 +23,31 @@ STAGE 1: 12/16
     GIT: DONE - get proper project set up.
         Cleanup old code.
     ADMIN: DONE - Invite scouter
-            and adam to join, and others.
+        and adam to join, and others.
 
 STAGE 2:
     DB: Add DB mysql.
+        add planets,
+        stars,
+        ships,
+        players.
     PLANETS:
         Have planets actually orbit.
-        Have diff planet sizes.
+        DONE - Have diff planet sizes.
         Add some moons.
-        Name each planet with Taylor I, II, etc heading away.
+        DONE - Name each planet with Taylor I, II, etc heading away.
     RESOURCES:
         Add resource types.
         Add resource collection from asteroids, planets, moons?
     GRAPHICS:
+        Add double canvas for flickering ships
         Add fog of war.
     TOOLBAR:
-        Add fleet info when clicked.
-        Add system toolbar information when name clicked.
+        Add fleet info toolbar when clicked.
+        Add star system toolbar information when name clicked.
         Add player info toolbar.
-        Add planet info toolbar
+        DONE - Add planet info toolbar
+        DONE - Add star system toolbar
     SHIPS:
         Add Enemy ships.
 
@@ -56,6 +62,7 @@ STAGE 3:
     Add buildings - in space station?
     Add tech tree.
     Add larger galaxy section map.
+    Allow planets to be renamed to get a "Common name"
 
 
 GAMEPLAY EXAMPLES:

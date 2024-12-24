@@ -92,6 +92,8 @@ export class Game {
     // For Testing Randomly 1 in 10 make the ship move to nearby new location.
     const r = Math.random();
     // console.log(`    Random number = ${r} and unit.gotoX = ${unit.gotoX || 0}`);
+
+    // DEBUG testing choose random locations on map each time stopped.
     if (r < 0.1 && unit.gotoX == null) {
       // unit.moving = true;
       // Set to 0.1 decimal.
@@ -128,10 +130,11 @@ export class Game {
     const dx = unit.gotoX - unit.x;
     const dy = unit.gotoY - unit.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    const speed = 0.1;  // hardcoded for now.
+    const shipSpeed = 1;  // hardcoded for now.
+    const gameSpeed = 0.5; // speed up or slow down all ships.
     // Format this to one decimal point.
-    const speedX = Math.round(dx / dist * speed * 100) / 100;
-    const speedY = Math.round(dy / dist * speed * 100) / 100;
+    const speedX = Math.round(dx / dist * shipSpeed * gameSpeed * 100) / 100;
+    const speedY = Math.round(dy / dist * shipSpeed * gameSpeed * 100) / 100;
     // console.log(`    speedX=${speedX} speedY=${speedY}`);
     // Format to one decimal point.
     const x = Math.round((unit.x + speedX) * 100) / 100;
